@@ -24,15 +24,33 @@ public class ItineraryPacing {
         }
     }
 
-    public static Pacing getPacingByTravelStyle(String travelStyle) {
+    public static Pacing getPacingByStyleAndBudget(String travelStyle, double budget) {
         if ("relaxed".equalsIgnoreCase(travelStyle)) {
-            return new Pacing(2, 4, 5, "Every 2-3 days");
+            if (budget < 500) {
+                return new Pacing(1, 3, 4, "Every 2 days");
+            } else if (budget < 1000) {
+                return new Pacing(2, 4, 5, "Every 3 days");
+            } else {
+                return new Pacing(2, 4, 6, "Every 3-4 days");
+            }
         } else if ("balanced".equalsIgnoreCase(travelStyle)) {
-            return new Pacing(3, 6, 7, "Every 4-5 days");
+            if (budget < 800) {
+                return new Pacing(2, 5, 6, "Every 3-4 days");
+            } else if (budget < 1500) {
+                return new Pacing(3, 6, 7, "Every 4-5 days");
+            } else {
+                return new Pacing(3, 6, 8, "Every 5 days");
+            }
         } else if ("fast-paced".equalsIgnoreCase(travelStyle)) {
-            return new Pacing(4, 8, 10, "Optional");
+            if (budget < 1200) {
+                return new Pacing(3, 6, 8, "Every 4 days");
+            } else if (budget < 2500) {
+                return new Pacing(4, 7, 9, "Every 5 days");
+            } else {
+                return new Pacing(5, 8, 10, "Optional");
+            }
         } else {
-            // default pacing
+            // Default pacing
             return new Pacing(3, 6, 7, "Every 4-5 days");
         }
     }
