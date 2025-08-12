@@ -79,7 +79,7 @@ This project is developed by Rihal for educational and internal demo purposes.
 
 ---
 
-Would you like me to generate a version with collapsible sections or GitHub badges next?
 
-
+
+
 
