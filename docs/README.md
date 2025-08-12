@@ -24,9 +24,9 @@ The goal is to deliver a working MVP in 3 weeks, with a modular, scalable archit
 |--------------|--------------------------------|
 | **Frontend** | React + Vite                   |
 | **Backend**  | Java + Spring Boot             |
-| **Database** | PostgreSQL or MySQL (JPA ORM)  |
+| **Database** | SQL Using SSMS                 |
 | **AI/Logic** | Rule-based engine + Gemini API |
-| **DevOps**   | GitHub Actions, Heroku/AWS     |
+| **DevOps**   | GitHub Actions, AWS            |
 | **Testing**  | JUnit, Jest, React Testing Lib |
 
 ---
