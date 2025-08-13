@@ -8,10 +8,6 @@ jobs:
   backend:
     name: Backend Build & Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend/BackendBase   # ← run where mvnw is
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -22,21 +18,27 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Debug path
-        run: pwd && ls -la
+      - name: Show tree
+        run: |
+          pwd
+          ls -la
+          ls -la backend || true
+          ls -la backend/BackendBase || true
 
       - name: Make mvnw executable
-        run: chmod +x mvnw
+        run: |
+          chmod +x backend/BackendBase/mvnw
+          sed -i 's/\r$//' backend/BackendBase/mvnw
 
       - name: Build and Test Backend
-        run: ./mvnw -B clean test
+        run: ./backend/BackendBase/mvnw -f backend/BackendBase/pom.xml -B clean test
+
   frontend:
     name: Frontend Build & Test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
