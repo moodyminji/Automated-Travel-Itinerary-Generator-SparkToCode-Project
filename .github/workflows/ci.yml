@@ -1,0 +1,55 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  backend:
+    name: Backend Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Debug so you can see paths in the log
+      - name: Show tree
+        run: |
+          pwd
+          ls -la
+          ls -la backend || true
+          ls -la backend/BackendBase || true
+
+      # Ensure the wrapper is executable and has LF endings
+      - name: Make mvnw executable
+        run: |
+          chmod +x backend/BackendBase/mvnw
+          sed -i 's/\r$//' backend/BackendBase/mvnw
+
+      # Build using the wrapper located in backend/BackendBase
+      - name: Build and Test Backend
+        run: ./backend/BackendBase/mvnw -f backend/BackendBase/pom.xml -B clean test
+
+  frontend:
+    name: Frontend Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install and Test Frontend
+        run: |
+          cd frontend
+          npm install
+          npm test
