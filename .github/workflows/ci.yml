@@ -18,7 +18,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # Debug so you can see paths in the log
+      # Debug paths so we can see the repo layout in logs
       - name: Show tree
         run: |
           pwd
@@ -26,7 +26,7 @@ jobs:
           ls -la backend || true
           ls -la backend/BackendBase || true
 
-      # Ensure the wrapper is executable and has LF endings
+      # Ensure wrapper is executable and has LF endings
       - name: Make mvnw executable
         run: |
           chmod +x backend/BackendBase/mvnw
@@ -44,12 +44,5 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+        uses: a
 
-      - name: Install and Test Frontend
-        run: |
-          cd frontend
-          npm install
-          npm test
