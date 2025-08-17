@@ -16,8 +16,8 @@ public class ItineraryController {
     private final ItineraryService itineraryService;
 
     @PostMapping("/generate")
-    public ResponseEntity<GenerateItineraryResponse> generate(
-            @Valid @RequestBody GenerateItineraryRequest request) {
+    public ResponseEntity<GenerateItineraryResponse> generate(@Valid @RequestBody GenerateItineraryRequest request) {
+        System.out.println("Received request: " + request);
         return ResponseEntity.ok(itineraryService.generate(request));
     }
 
