@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor @AllArgsConstructor @Builder
 @ToString(exclude = "segments")
 @EqualsAndHashCode(exclude = "segments")
+@Data
 public class Itinerary {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,5 +26,6 @@ public class Itinerary {
 
     @OneToMany(mappedBy = "itinerary", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
+    @Builder.Default
     private List<TripSegment> segments = new ArrayList<>();
 }
