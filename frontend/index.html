@@ -2,10 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Travel Itinerary Generator</title>
+    <title>Vite + React + TS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  (() => {
+    try {
+      const key = 'tajawal:theme';
+      const saved = localStorage.getItem(key);
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const mode = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', mode);
+      document.documentElement.style.colorScheme = mode;
+    } catch {}
+  })();
+</script>
+
   </head>
-  <body class="bg-gray-50 text-gray-800">
+  <body>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
