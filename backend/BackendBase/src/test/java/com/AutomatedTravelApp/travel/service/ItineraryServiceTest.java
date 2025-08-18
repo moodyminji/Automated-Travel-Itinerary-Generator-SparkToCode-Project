@@ -113,14 +113,13 @@ class ItineraryServiceTest {
         when(activityRepository.save(any(Activity.class))).thenAnswer(inv -> {
             Activity a = inv.getArgument(0);
             a.setId(4L);
-            // Check the service built the default name correctly
-            // (You could also capture the argument and assert, this keeps it simple)
+
             return a;
         });
 
         GenerateItineraryResponse res = service.generate(req);
 
         assertThat(res.getItineraryId()).isEqualTo(1L);
-        // If you want stricter checks, use ArgumentCaptor to inspect the Activity name.
+
     }
 }

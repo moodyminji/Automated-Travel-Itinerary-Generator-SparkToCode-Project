@@ -37,6 +37,6 @@ class ItineraryServiceIT {
 
         Itinerary saved = itineraryRepository.findById(res.getItineraryId()).orElseThrow();
         assertThat(saved.getDestination()).isEqualTo("Tokyo");
-        assertThat(saved.getSegments()).isNotEmpty(); // Day 1 stub added
+        assertThat(saved.getSegments()).isNotEmpty();
     }
 }
