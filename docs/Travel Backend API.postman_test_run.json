@@ -1,0 +1,66 @@
+{
+	"id": "80daec52-bc30-4144-ac28-63e21d5f45ed",
+	"name": "Travel Backend API",
+	"timestamp": "2025-08-19T12:31:13.598Z",
+	"collection_id": "47003469-49b18308-b7fc-46e0-aada-fa1192e3c511",
+	"folder_id": 0,
+	"environment_id": "47003469-11a0206b-1d5c-4e16-9a2a-24cd436c6277",
+	"totalPass": 0,
+	"delay": 0,
+	"persist": true,
+	"status": "finished",
+	"startedAt": "2025-08-19T12:31:12.268Z",
+	"totalFail": 0,
+	"results": [
+		{
+			"id": "353bae78-a565-4982-864b-627b9b40c628",
+			"name": "Health Check",
+			"url": "http://localhost:8080/api/itineraries/health",
+			"time": 83,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				83
+			],
+			"allTests": [
+				{}
+			]
+		},
+		{
+			"id": "b26b06f3-02f1-4a53-bb56-b7b4b6648ee1",
+			"name": "Generate Itinerary",
+			"url": "http://localhost:8080/api/itineraries/generate",
+			"time": 247,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {},
+			"testPassFailCounts": {},
+			"times": [
+				247
+			],
+			"allTests": [
+				{}
+			]
+		}
+	],
+	"count": 1,
+	"totalTime": 330,
+	"collection": {
+		"requests": [
+			{
+				"id": "353bae78-a565-4982-864b-627b9b40c628",
+				"method": "GET"
+			},
+			{
+				"id": "b26b06f3-02f1-4a53-bb56-b7b4b6648ee1",
+				"method": "POST"
+			}
+		]
+	}
+}

@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/* === Tokens so utilities like bg-primary-500 exist === */
+@theme {
+  --color-primary-500: #1D3557;
+  --color-primary-600: #162949;
+
+  --color-secondary-500: #F4A261;
+  --color-secondary-600: #DB8F52;
+
+  --color-surface: #0F172A; /* used by bg-surface */
+}
+
+/* === Themes (swap values per mode) === */
+:root[data-theme='dark'] {
+  --color-bg: #111827;
+  --color-surface: #0F172A;
+  --color-border: #1F2937;
+  --color-text: #F9FAFB;
+  --color-text-muted: rgba(249, 250, 251, 0.7);
+}
+:root[data-theme='light'] {
+  --color-bg: #F9FAFB;
+  --color-surface: #FFFFFF;
+  --color-border: #E5E7EB;
+  --color-text: #111827;
+  --color-text-muted: #6B7280;
+}
+
+/* === Base === */
+html, body, #root { height: 100%; }
+body { background: var(--color-bg); color: var(--color-text); }
+
+/* Helpers */
+.text-muted { color: var(--color-text-muted); }
+.link-muted { color: var(--color-text-muted); }
+.link-muted:hover { color: var(--color-secondary-500); }
+
+.btn-primary {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-xl
+         bg-primary-500 hover:bg-primary-600 text-white transition;
+}
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-xl
+         bg-secondary-500 hover:bg-secondary-600 text-[--color-bg] transition;
+}
+.card { @apply rounded-2xl bg-surface/90 border border-[--color-border] shadow-lg; }
+
+/* Typography */
+.h1 { @apply text-[32px] font-bold leading-tight; }
+.h2 { @apply text-[24px] font-medium leading-snug; }
+.small { @apply text-[14px] font-light; }
