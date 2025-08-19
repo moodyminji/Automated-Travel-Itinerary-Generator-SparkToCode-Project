@@ -21,8 +21,8 @@ public class ItineraryController {
         return ResponseEntity.ok(itineraryService.generate(request));
     }
 
-    @GetMapping("/health")
-    public String health() {
-        return "OK";
+    @GetMapping("/{id}")
+    public ResponseEntity<GenerateItineraryResponse> get(@PathVariable Long id) {
+        return ResponseEntity.ok(itineraryService.getById(id));
     }
 }
