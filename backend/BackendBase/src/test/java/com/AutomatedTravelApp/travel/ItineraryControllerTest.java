@@ -1,52 +1,69 @@
 package com.AutomatedTravelApp.travel;
 
+import com.AutomatedTravelApp.travel.controller.ItineraryController;
+import com.AutomatedTravelApp.travel.dto.GenerateItineraryRequest;
 import com.AutomatedTravelApp.travel.dto.GenerateItineraryResponse;
 import com.AutomatedTravelApp.travel.service.ItineraryService;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(ItineraryController.class)
 class ItineraryControllerTest {
 
     @Autowired
-    MockMvc mvc;
+    private MockMvc mockMvc;
 
     @MockBean
-    ItineraryService service;
+    private ItineraryService itineraryService;
 
     @Test
     void health_ok() throws Exception {
-        mvc.perform(get("/api/itineraries/health"))
+        mockMvc.perform(get("/api/itineraries/health"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("OK"));
     }
 
     @Test
     void generate_ok() throws Exception {
-        // Mock service response
-        var resp = new GenerateItineraryResponse(1L, "Itinerary created successfully");
-        when(service.generate(any())).thenReturn(resp);
+        when(itineraryService.generate(any(GenerateItineraryRequest.class)))
+                .thenReturn(new GenerateItineraryResponse(123L, "Itinerary created"));
 
-        // Example request body
-        var body = """
-          {"destination":"DXB","days":4,"startDate":"10-09-2025","endDate":"14-09-2025","interests":["beach","shopping","food"]}
-          """;
+        String body = """
+            {
+              "destination": "DXB",
+              "days": 3,
+              "startDate": "10-09-2025",
+              "endDate":   "12-09-2025",
+              "interests": ["shopping","food"]
+            }
+            """;
 
-        mvc.perform(post("/api/itineraries/generate")
-                        .contentType("application/json")
+        mockMvc.perform(post("/api/itineraries/generate")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.itineraryId").value(123))
+                .andExpect(jsonPath("$.message").value("Itinerary created"));
+    }
+
+    @Test
+    void getById_ok() throws Exception {
+        when(itineraryService.getById(1L))
+                .thenReturn(new GenerateItineraryResponse(1L, "Found"));
+
+        mockMvc.perform(get("/api/itineraries/1"))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.itineraryId").value(1))
-                .andExpect(jsonPath("$.message").value("Itinerary created successfully"));
+                .andExpect(jsonPath("$.message").value("Found"));
     }
 }

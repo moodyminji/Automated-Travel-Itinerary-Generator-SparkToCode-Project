@@ -15,14 +15,19 @@ public class ItineraryController {
 
     private final ItineraryService itineraryService;
 
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
+    }
+
     @PostMapping("/generate")
-    public ResponseEntity<GenerateItineraryResponse> generate(@Valid @RequestBody GenerateItineraryRequest request) {
-        System.out.println("Received request: " + request);
+    public ResponseEntity<GenerateItineraryResponse> generate(
+            @Valid @RequestBody GenerateItineraryRequest request) {
         return ResponseEntity.ok(itineraryService.generate(request));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GenerateItineraryResponse> get(@PathVariable Long id) {
+    public ResponseEntity<GenerateItineraryResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(itineraryService.getById(id));
     }
 }
