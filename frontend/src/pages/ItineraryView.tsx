@@ -1,298 +1,271 @@
-// src/pages/ItineraryView.tsx
-import { useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import type { ItineraryDay } from '../types';
-import { loadItinerary, saveItinerary } from '../utils/itineraryStore';
-import { makeMockItinerary } from '../utils/mock';
-import TripMap from '../components/TripMap';
-import { jsPDF } from 'jspdf';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useThemeMode } from "../hooks/useThemeMode";
 
-type Params = { tripId?: string };
+type IconProps = React.SVGProps<SVGSVGElement> & { className?: string };
 
-function computeBudget(days: ItineraryDay[]) {
-  const perDay = days.map((d) => ({
-    day: d.day,
-    total: d.activities.reduce((s, a) => s + (a.cost ?? 0), 0),
-  }));
-  const total = perDay.reduce((s, x) => s + x.total, 0);
-  return { perDay, total };
-}
+const Icon = {
+  luggage: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+      {/* suitcase body */}
+      <rect x="6" y="7" width="12" height="13" rx="2" />
+      {/* suitcase handle */}
+      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+      {/* suitcase wheels */}
+      <line x1="9" y1="20" x2="9" y2="22" />
+      <line x1="15" y1="20" x2="15" y2="22" />
+    </svg>
+  ),
+  edit: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </svg>
+  ),
+  save: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+      <path d="M4 4h12l4 4v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+      <path d="M12 4v6H6V4" />
+    </svg>
+  ),
+  share: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="M8.6 13.5 15.4 17M15.4 7 8.6 10.5" />
+    </svg>
+  ),
+  trash: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...p}>
+      <path d="M3 6h18M8 6l1-2h6l1 2M6 6v13a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  ),
+  check: (p: IconProps) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...p}>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  ),
+};
 
-interface ShareData {
-  title?: string;
-  text?: string;
-  url?: string;
-}
-type WebShareNavigator = Navigator & { share?: (data: ShareData) => Promise<void> };
+export default function ItineraryResultsPage() {
+  const [showMap, setShowMap] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const { mode } = useThemeMode(); // 👈 theme mode
 
-export default function ItineraryView() {
-  const { tripId = 'demo' } = useParams<Params>();
-  const nav = useNavigate();
+  const cardBg = mode === "light" ? "bg-[#FFFFFF]" : "bg-[#142A45]";
+  const textColor = mode === "light" ? "text-[#111827]" : "text-white";
 
-  const fallback: ItineraryDay[] = useMemo(() => makeMockItinerary(), []);
-  const stored = loadItinerary(tripId);
-  const [days, setDays] = useState<ItineraryDay[]>(stored ?? fallback);
-
-  const [showMap, setShowMap] = useState(false);
-  const [query, setQuery] = useState('');
-  const [onlyPending, setOnlyPending] = useState(false);
-  const [dayFilter, setDayFilter] = useState<'all' | number>('all');
-  const [savedBanner, setSavedBanner] = useState(false);
-
-  const filtered = useMemo(() => {
-    let out = days;
-    if (dayFilter !== 'all') out = out.filter((d) => d.day === dayFilter);
-    const q = query.trim().toLowerCase();
-    if (q) {
-      out = out.map((d) => ({
-        ...d,
-        activities: d.activities.filter(
-          (a) =>
-            a.title.toLowerCase().includes(q) ||
-            (a.location ?? '').toLowerCase().includes(q) ||
-            (a.notes ?? '').toLowerCase().includes(q)
-        ),
-      }));
-    }
-    if (onlyPending) {
-      out = out.map((d) => ({ ...d, activities: d.activities.filter((a) => !a.done) }));
-    }
-    return out;
-  }, [days, dayFilter, query, onlyPending]);
-
-  const budget = computeBudget(days);
-
-  const saveTrip = () => {
-    saveItinerary(tripId, days);
-    setSavedBanner(true);
-    setTimeout(() => setSavedBanner(false), 1500);
-  };
-
-  const shareTrip = async () => {
-    const title = `Trip plan (${tripId})`;
-    const text = days
-      .map(
-        (d) =>
-          `Day ${d.day}\n` +
-          d.activities
-            .map(
-              (a) =>
-                `- ${a.time ? a.time + ' ' : ''}${a.title}${
-                  a.location ? ' @ ' + a.location : ''
-                }${a.cost != null ? ` ($${a.cost})` : ''}`
-            )
-            .join('\n')
-      )
-      .join('\n\n');
-
-    const navShare = navigator as WebShareNavigator;
-    if (typeof navShare.share === 'function') {
+  // ---- handlers ----
+  const handleEdit = () => navigate("/itinerary/1/edit");
+  const handleSave = () => alert("The trip has been successfully saved..!");
+  const handleShare = async () => {
+    if (navigator.share) {
       try {
-        await navShare.share({ title, text });
-        return;
+        await navigator.share({
+          title: "Itinerary",
+          text: "Check out my trip itinerary!",
+          url: window.location.href,
+        });
       } catch {
-        // user canceled
+        // cancelled
       }
+    } else {
+      window.print();
     }
-
-    // Fallback: فتح نافذة الطباعة (PDF)
-    const w = window.open('', '_blank', 'width=880,height=1000');
-    if (!w) return;
-    w.document.write(`<html><head><title>${title}</title>
-      <style>
-        body{font-family: system-ui,Segoe UI,Roboto,Arial; padding:24px}
-        h1{margin:0 0 12px}
-        h2{margin:16px 0 6px}
-        ul{margin:6px 0 14px}
-      </style>
-    </head><body>`);
-    w.document.write(`<h1>${title}</h1>`);
-    days.forEach((d) => {
-      w.document.write(`<h2>Day ${d.day}</h2><ul>`);
-      d.activities.forEach((a) => {
-        w.document.write(
-          `<li>${a.time ? a.time + ' ' : ''}<strong>${a.title}</strong>${
-            a.location ? ' @ ' + a.location : ''
-          }${a.cost != null ? ` ($${a.cost})` : ''}${a.notes ? ` — ${a.notes}` : ''}</li>`
-        );
-      });
-      w.document.write(`</ul>`);
-    });
-    w.document.write(`<hr/><p>Total Budget: $${budget.total}</p>`);
-    w.document.write(`</body></html>`);
-    w.document.close();
-    w.focus();
-    w.print();
   };
-
-  const downloadPdf = () => {
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-    let y = 48;
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.text(`Trip plan (${tripId})`, 48, y);
-    y += 16;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(11);
-
-    days.forEach((d) => {
-      y += 18;
-      if (y > 780) {
-        doc.addPage();
-        y = 48;
-      }
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Day ${d.day}`, 48, y);
-      doc.setFont('helvetica', 'normal');
-
-      d.activities.forEach((a) => {
-        const line =
-          `${a.time ? a.time + ' ' : ''}${a.title}` +
-          `${a.location ? ' @ ' + a.location : ''}` +
-          `${a.cost != null ? ` ($${a.cost})` : ''}` +
-          `${a.notes ? ` — ${a.notes}` : ''}`;
-        const lines = doc.splitTextToSize(line, 520);
-        y += 14;
-        if (y > 780) {
-          doc.addPage();
-          y = 48;
-        }
-        doc.text(lines, 64, y);
-        y += (lines.length - 1) * 12;
-      });
-    });
-
-    y += 24;
-    if (y > 780) {
-      doc.addPage();
-      y = 48;
-    }
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total Budget: $${budget.total}`, 48, y);
-
-    doc.save(`trip-${tripId}.pdf`);
-  };
-
-  const deleteTrip = () => {
-    if (!confirm('Delete this trip? This cannot be undone.')) return;
-    localStorage.removeItem(`tajawal:itinerary:${tripId}`);
-    nav('/profile');
-  };
-
-  const toggleDone = (dayIndex: number, actId: string) => {
-    setDays((prev) => {
-      const next = prev.map((d, i) =>
-        i !== dayIndex
-          ? d
-          : { ...d, activities: d.activities.map((a) => (a.id === actId ? { ...a, done: !a.done } : a)) }
-      );
-      saveItinerary(tripId, next);
-      return next;
-    });
+  const handleDelete = () => {
+    const ok = confirm("Are you sure you want to delete this trip?");
+    if (!ok) return;
+    alert("The trip has been successfully deleted..!");
+    navigate("/profile");
   };
 
   return (
-    <section className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="h2">Itinerary</h1>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setShowMap((s) => !s)}
-            className="px-3 py-2 rounded-xl border border-[--color-border] hover:bg-surface/70"
-          >
-            {showMap ? 'Hide Map' : 'Show Map'}
-          </button>
-          <Link to={`/itinerary/${tripId}/edit`} className="btn-secondary">
-            Edit Itinerary
-          </Link>
-          <button onClick={saveTrip} className="px-3 py-2 rounded-xl border border-[--color-border] hover:bg-surface/70">
-            Save Trip
-          </button>
-          <button onClick={shareTrip} className="px-3 py-2 rounded-xl border border-[--color-border] hover:bg-surface/70">
-            Share
-          </button>
-          <button onClick={downloadPdf} className="px-3 py-2 rounded-xl border border-[--color-border] hover:bg-surface/70">
-            Download PDF
-          </button>
-          <button onClick={deleteTrip} className="px-3 py-2 rounded-xl border border-[--color-border] hover:bg-surface/70 text-red-500">
-            Delete Trip
-          </button>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+      {/* Card */}
+      <div className={`${cardBg} shadow-md`}>
+        {/* Title row */}
+        <div className="px-5 sm:px-6 pt-5 pb-3">
+          <div className="relative text-center">
+            <div className="flex flex-col items-center flex-1">
+              <div className={`flex items-center justify-center gap-2 ${textColor}`}>
+                <Icon.luggage className="w-7 h-7" />
+                <h1 className={`text-lg sm:text-xl font-bold ${textColor}`}>
+                  Your Trip to London
+                </h1>
+              </div>
+              <h2 className="mt-1 text-xs sm:text-sm text-slate-500 font-bold">
+                June 15 – June 20, 2025 • 2 Travellers
+              </h2>
+            </div>
 
-      {savedBanner && <div className="card p-3 small text-green-600">Saved ✅</div>}
-
-      {/* فلاتر */}
-      <div className="card p-4 grid md:grid-cols-4 gap-3">
-        <input
-          className="input"
-          placeholder="Search title / location / notes…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <select
-          className="input"
-          aria-label="Filter by day"
-          value={dayFilter === 'all' ? 'all' : String(dayFilter)}
-          onChange={(e) => setDayFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-        >
-          <option value="all">All days</option>
-          {days.map((d) => (
-            <option key={d.day} value={d.day}>Day {d.day}</option>
-          ))}
-        </select>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" checked={onlyPending} onChange={(e) => setOnlyPending(e.target.checked)} />
-          <span className="small">Hide completed</span>
-        </label>
-        <div className="flex items-center gap-2 justify-end">
-          <span className="small text-muted">Total:</span>
-          <span className="font-semibold">${budget.total}</span>
-        </div>
-      </div>
-
-      {/* الخريطة الحقيقية */}
-      {showMap && (
-        <div className="card p-5">
-          <h3 className="font-semibold mb-2">Map</h3>
-          <TripMap days={filtered} />
-        </div>
-      )}
-
-      {/* القائمة يوم-بي-يوم */}
-      {filtered.map((day, idx) => (
-        <div key={day.day} className="card p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold">Day {day.day}</h3>
-            <div className="small text-muted">
-              Budget: ${day.activities.reduce((s, a) => s + (a.cost ?? 0), 0)}
+            {/* Show Map toggle */}
+            <div className="flex justify-end mt-2">
+              <label className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 select-none">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300"
+                  checked={showMap}
+                  onChange={(e) => setShowMap(e.target.checked)}
+                  aria-controls="itinerary-map"
+                  aria-expanded={showMap}
+                />
+                <span>Show Map</span>
+              </label>
             </div>
           </div>
+        </div>
 
-          <ul className="space-y-2 text-sm">
-            {day.activities.map((a) => (
-              <li
-                key={a.id}
-                className={`border border-[--color-border] rounded-xl p-3 flex flex-wrap gap-3 items-center ${a.done ? 'opacity-70' : ''}`}
-              >
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={!!a.done} onChange={() => toggleDone(idx, a.id)} />
-                  <span className={`font-medium ${a.done ? 'line-through' : ''}`}>
-                    {a.time && <span className="mr-2 px-2 py-1 rounded-lg bg-surface/70">{a.time}</span>}
-                    {a.title}
-                  </span>
-                </label>
-                {a.location && <span className="text-muted">• {a.location}</span>}
-                {a.cost != null && <span className="ml-auto">${a.cost}</span>}
-                {a.notes && <div className="w-full small text-muted">{a.notes}</div>}
-              </li>
-            ))}
-            {day.activities.length === 0 && <li className="small text-muted">No activities for this filter.</li>}
+        {/* Map */}
+        <div
+          id="itinerary-map"
+          className={`transition-all duration-300 ease-out overflow-hidden ${
+            showMap ? "max-h-[600px]" : "max-h-0"
+          }`}
+        >
+          <div className="px-5 sm:px-6 pb-4">
+            <div className="rounded border border-slate-200 overflow-hidden">
+              <div className="aspect-[16/9] bg-slate-200 flex items-center justify-center">
+                <span className="text-slate-600 text-sm">Map goes here</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Day blocks */}
+        <DayBlock
+          title="Day 1: Arrival & Exploration"
+          items={[
+            "Check-in at Hotel 12:00 PM",
+            "Lunch at Circolo Popolare 1:30 PM",
+            "Evening Cruise 7:30 PM",
+          ]}
+        />
+        <DayBlock
+          title="Day 2: Culture & History"
+          items={[
+            "Victoria and Albert Museum Tour 9:00 AM",
+            "Hideaway Coffee House 12:30 PM",
+            "Buckingham Palace 3:00 PM",
+          ]}
+        />
+
+        {/* Budget */}
+        <div className="px-5 sm:px-6 pb-4">
+          <div
+            className="px-4 py-3 text-sm"
+            style={{
+              background: "#E9E9E9",
+              color: mode === "light" ? "#111827" : "#111827",
+            }}
+          >
+            <span className="font-semibold">Budget Summary:</span>{" "}
+            <span className="opacity-80">
+              Total: OMR 2,800 | Spent: OMR 1,200 | Remaining: OMR 1,600
+            </span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="px-5 sm:px-6 pb-5">
+          <div className="flex flex-wrap justify-center gap-3">
+            <BarButton color="#1D3557" icon={<Icon.edit className="w-4 h-4" />} onClick={handleEdit}>
+              Edit Itinerary
+            </BarButton>
+            <BarButton color="#198754" icon={<Icon.save className="w-4 h-4" />} onClick={handleSave}>
+              Save Trip
+            </BarButton>
+            <BarButton
+              color="#F5A623"
+              icon={<Icon.share className="w-4 h-4" />}
+              onClick={handleShare}
+            >
+              Share
+            </BarButton>
+            <BarButton
+              color="#F47984"
+              icon={<Icon.trash className="w-4 h-4" />}
+              onClick={handleDelete}
+            >
+              Delete Trip
+            </BarButton>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Pieces ---------- */
+function DayBlock({
+  title,
+  items,
+  completed = false,
+}: {
+  title: string;
+  items: string[];
+  completed?: boolean;
+}) {
+  const [checked, setChecked] = useState<boolean[]>(Array(items.length).fill(false));
+  const toggleCheck = (i: number) =>
+    setChecked((prev) => {
+      const next = [...prev];
+      next[i] = !next[i];
+      return next;
+    });
+
+  return (
+    <div className="px-5 sm:px-6">
+      <div className="mb-3 overflow-hidden" style={{ background: "#E9E9E9" }}>
+        <div className="px-4 py-2 border-b border-slate-200">
+          <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+        </div>
+        <div className="px-4 py-3">
+          <ul className="space-y-2">
+            {items.map((t, i) => {
+              const isChecked = completed ? true : checked[i];
+              return (
+                <li key={i} className="flex items-center gap-2 text-sm text-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => (!completed ? toggleCheck(i) : null)}
+                    disabled={completed}
+                    className="h-4 w-4 rounded border-slate-400 disabled:opacity-60"
+                  />
+                  <span className={isChecked ? "line-through text-slate-500" : ""}>{t}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
-      ))}
-    </section>
+      </div>
+    </div>
+  );
+}
+
+function BarButton({
+  children,
+  color,
+  icon,
+  onClick,
+}: {
+  children: React.ReactNode;
+  color: string;
+  icon?: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{ backgroundColor: color }}
+      className="inline-flex items-center gap-2 text-white text-xs sm:text-sm px-3 py-2 shadow hover:opacity-90"
+    >
+      {icon}
+      <span className="font-medium">{children}</span>
+    </button>
   );
 }

@@ -1,60 +1,60 @@
-// src/pages/NotFound.tsx
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
+import type { Theme } from "@mui/material";
 
 export default function NotFound() {
+  const theme: Theme = useTheme();
+  const isDark: boolean = theme.palette.mode === "dark";
+
   return (
-    <section className="min-h-[60vh] flex items-center justify-center">
-      <div className="text-center space-y-6">
-        {/* رسم ظريف بدل صورة خارجية */}
-        <div className="mx-auto w-72 h-72 text-[--color-primary]">
-          <svg viewBox="0 0 400 400" className="w-full h-full" role="img" aria-label="404 - page not found">
-            <defs>
-              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="currentColor" stopOpacity="0.9" />
-                <stop offset="1" stopColor="currentColor" stopOpacity="0.5" />
-              </linearGradient>
-            </defs>
-            {/* 404 */}
-            <g fill="none" stroke="currentColor" strokeWidth="10" opacity="0.25">
-              <path d="M65 200 l60 -100 v160" />
-              <path d="M145 260 h-80" />
-              <circle cx="200" cy="200" r="46" />
-              <circle cx="200" cy="200" r="86" />
-              <path d="M315 200 l60 -100 v160" />
-              <path d="M395 260 h-80" />
-            </g>
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div
+        className="w-full max-w-3xl flex flex-col items-center py-10 px-8 mx-auto shadow-lg"
+        style={{ backgroundColor: isDark ? "#0B1D33" : "#FFFFFF" }}
+      >
+        <h1
+          className="text-6xl font-extrabold font-poppins"
+          style={{ color: theme.palette.text.primary }}
+        >
+          404
+        </h1>
 
-            {/* سحابة */}
-            <g fill="url(#g)" opacity="0.25">
-              <ellipse cx="140" cy="120" rx="38" ry="22" />
-              <ellipse cx="170" cy="120" rx="48" ry="28" />
-              <ellipse cx="205" cy="120" rx="38" ry="22" />
-            </g>
+        <h2
+          className="text-2xl font-bold font-poppins mt-2"
+          style={{ color: theme.palette.text.primary }}
+        >
+          Oops! Page Not Found
+        </h2>
 
-            {/* طيّارة */}
-            <g transform="translate(60,30)">
-              <path
-                d="M60 220 l220 -40 c12 -2 20 12 11 21 l-55 54 c-3 3 -7 4 -11 3 l-70 -22 -42 24 -18 -6 26 -30 -58 -20 z"
-                fill="currentColor"
-                opacity="0.9"
-              />
-              <circle cx="263" cy="216" r="5" fill="white" />
-            </g>
-          </svg>
-        </div>
-
-        <h1 className="h2">Oops! Page not found</h1>
-        <p className="text-muted max-w-md mx-auto">
-          The page you’re looking for doesn’t exist or might have moved.
+        <p
+          className="max-w-md mx-auto text-center font-poppins mt-4"
+          style={{ color: theme.palette.text.secondary }}
+        >
+          We couldn’t find the page you’re looking for. It might have been moved,
+          deleted, or typed incorrectly.
         </p>
 
-        <div className="flex gap-3 justify-center">
-          <Link to="/" className="btn-primary">Back Home</Link>
-          <Link to="/profile" className="btn-secondary">Go to My Trips</Link>
+        <div className="flex gap-4 justify-center mt-8">
+          <Link
+            to="/"
+            className="px-6 py-2 font-semibold text-white"
+            style={{ backgroundColor: "#F5A623" }}
+          >
+            Back Home
+          </Link>
+          <Link
+            to="/profile"
+            className="px-6 py-2 font-semibold"
+            style={{
+              backgroundColor: isDark ? "#FFFFFF" : "#1D3557",
+              color: isDark ? "#F5A623" : "#FFFFFF",
+              border: isDark ? "2px solid #F5A623" : "none",
+            }}
+          >
+            Go to My Trips
+          </Link>
         </div>
-
-        <p className="small text-muted">You can use the buttons above to get back on track.</p>
       </div>
-    </section>
+    </div>
   );
 }

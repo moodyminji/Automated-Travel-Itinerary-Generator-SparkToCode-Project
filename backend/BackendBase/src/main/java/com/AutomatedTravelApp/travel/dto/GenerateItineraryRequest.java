@@ -13,7 +13,7 @@ public class GenerateItineraryRequest {
     private String destination;
 
     @Min(1)
-    private int days;
+    private Integer days;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy")
     private LocalDate startDate;
@@ -25,4 +25,12 @@ public class GenerateItineraryRequest {
 
     private Integer budget;
     private String travelStyle;
+
+    public boolean isDaysOrDatesProvided() {
+        boolean hasDays = days != null && days >= 1;
+        boolean hasDates = startDate != null && endDate != null && !endDate.isBefore(startDate);
+        return hasDays || hasDates;
+    }
+
 }
+

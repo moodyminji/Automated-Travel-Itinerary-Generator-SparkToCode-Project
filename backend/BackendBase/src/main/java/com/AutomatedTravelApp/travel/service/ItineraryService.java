@@ -94,15 +94,6 @@ public class ItineraryService {
         return mapper.fromTrip(trip, days, activities);
     }
 
-    private LocalDate parseDdMmYyyy(String s, LocalDate fallback) {
-        try {
-            if (s == null || s.isBlank()) return fallback;
-            String[] p = s.split("-");
-            return LocalDate.of(Integer.parseInt(p[2]), Integer.parseInt(p[1]), Integer.parseInt(p[0]));
-        } catch (Exception e) {
-            return fallback;
-        }
-    }
 
     private BigDecimal toBigDecimal(Number n) {
         if (n == null) return BigDecimal.ZERO;
