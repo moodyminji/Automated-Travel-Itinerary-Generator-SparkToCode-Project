@@ -5,8 +5,10 @@ import com.AutomatedTravelApp.travel.dto.GenerateItineraryResponse;
 import com.AutomatedTravelApp.travel.service.ItineraryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/itineraries")
@@ -21,10 +23,14 @@ public class ItineraryController {
     }
 
     @PostMapping("/generate")
-    public ResponseEntity<GenerateItineraryResponse> generate(
-            @Valid @RequestBody GenerateItineraryRequest request) {
+    public ResponseEntity<GenerateItineraryResponse> generate(@Valid @RequestBody GenerateItineraryRequest request) {
+        if (request.getStartDate() != null && request.getEndDate() != null
+                && request.getEndDate().isBefore(request.getStartDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "endDate must be on/after startDate");
+        }
         return ResponseEntity.ok(itineraryService.generate(request));
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<GenerateItineraryResponse> getById(@PathVariable Long id) {

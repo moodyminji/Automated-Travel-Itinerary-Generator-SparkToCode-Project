@@ -23,8 +23,8 @@ public class GenerateItineraryResponse {
 
     private FlightDto flight;
     private AccommodationDto accommodation;
-    private List<ActivityDto> activities;
-    private List<ItineraryDayDto> itineraryDays;
+    private List<ActivityDto> activities = List.of();
+    private List<ItineraryDayDto> itineraryDays = List.of();
 
     public GenerateItineraryResponse(Long itineraryId, String message) {
         this.itineraryId = itineraryId;

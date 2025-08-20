@@ -22,4 +22,7 @@ public class GenerateItineraryRequest {
     private LocalDate endDate;
 
     private List<String> interests;
+
+    private Integer budget;
+    private String travelStyle;
 }
