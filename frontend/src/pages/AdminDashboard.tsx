@@ -1,18 +1,8 @@
 // src/pages/AdminDashboard.tsx
 import React from "react";
 import type { JSX } from "react";
-import {
-  FileWarning,
-  Users,
-  KeyRound,
-  Cog,
-  Download,
-  ShieldCheck,
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import { LogoutOutlined } from "@mui/icons-material";
-import bgUrl from "../assets/background.png";
+import { FileWarning, Users, KeyRound, Cog, Download } from "lucide-react";
+import { useThemeMode } from "../hooks/useThemeMode";
 
 /* ---------- Data types ---------- */
 type Level = "Info" | "Warning" | "Error";
@@ -107,32 +97,8 @@ export default function AdminDashboard(): JSX.Element {
   const [logs] = React.useState<LogRow[]>(initialLogs);
   const [errors, setErrors] = React.useState<ErrorRow[]>(initialErrors);
 
-  // Hide global Layout header so we only use this page's navbar
-  React.useEffect(() => {
-    const header =
-      document.querySelector<HTMLElement>('[data-global-header]') ??
-      document.querySelector<HTMLElement>('header');
-    const prev = header?.style.display;
-    if (header) header.style.display = 'none';
-    return () => { if (header) header.style.display = prev || ''; };
-  }, []);
-
-  const { logout, user } = useAuth();
-  const nav = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await Promise.resolve(logout());
-    } finally {
-      nav('/', { replace: true });
-    }
-  };
-
-  const AdminOnly = () => (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-2 py-1 text-xs font-medium text-white">
-      <ShieldCheck className="h-3.5 w-3.5" /> For admins only
-    </span>
-  );
+  const { mode } = useThemeMode();
+  const isDark = mode === "dark";
 
   const exportLogs = (): void => {
     const csv = logsToCSV(logs);
@@ -160,47 +126,25 @@ export default function AdminDashboard(): JSX.Element {
   };
 
   return (
-    <div
-      className="relative min-h-screen w-full overflow-hidden bg-[#f6efe6] bg-no-repeat bg-cover bg-bottom"
-      style={{ backgroundImage: `url(${bgUrl})` }}
-    >
-      {/* Page-local navbar (styled like Layout), NO Profile, NO dark-mode */}
-      <header className="sticky top-0 z-50 border-b border-[--color-border] bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="inline-flex items-center">
-              <img src="/logo.png" alt="Tajawal Logo" className="h-10 w-auto" />
-            </Link>
-            <AdminOnly />
-          </div>
-
-          <nav className="hidden md:flex items-center gap-2">
-            <a className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-surface/70" href="#destinations">Destinations</a>
-            <a className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-surface/70" href="#logs">Logs</a>
-            <a className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-surface/70" href="#errors">Errors</a>
-            <a className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-surface/70" href="#users">User Management</a>
-
-            {user && (
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-surface/70"
-                type="button"
-              >
-                <LogoutOutlined fontSize="small" /> Logout
-              </button>
-            )}
-          </nav>
-        </div>
-      </header>
-
-      {/* Page title */}
-      <section className="relative mx-auto max-w-6xl px-6">
-        <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-        <p className="mt-1 text-slate-600">Monitor and manage your application</p>
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-transparent">
+      {/* Page title (dark-mode aware) */}
+      <section className="relative w-full px-6">
+        <h1
+          className="text-3xl font-bold"
+          style={{ color: isDark ? "#FFFFFF" : "#0f172a" }}
+        >
+          Admin Dashboard
+        </h1>
+        <p
+          className="mt-1"
+          style={{ color: isDark ? "#B6C2D4" : "#475569" }}
+        >
+          Monitor and manage your application
+        </p>
       </section>
 
       {/* Metrics cards */}
-      <section className="relative mx-auto mt-8 grid max-w-6xl grid-cols-1 gap-4 px-6 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="relative mt-8 grid w-full grid-cols-1 gap-4 px-6 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map((m) => (
           <div key={m.title} className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur-sm transition hover:shadow-md">
             <div className="flex items-start justify-between">
@@ -216,7 +160,7 @@ export default function AdminDashboard(): JSX.Element {
       </section>
 
       {/* Logs */}
-      <section id="logs" className="relative mx-auto mt-10 max-w-6xl px-6">
+      <section id="logs" className="relative mt-10 w-full px-6">
         <div className="rounded-2xl border border-slate-200 bg-white/90 p-0 shadow-sm backdrop-blur-sm">
           <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
             <div>
@@ -253,7 +197,7 @@ export default function AdminDashboard(): JSX.Element {
       </section>
 
       {/* Error Monitor */}
-      <section id="errors" className="relative mx-auto mt-10 max-w-6xl px-6">
+      <section id="errors" className="relative mt-10 w-full px-6">
         <div className="rounded-2xl border border-slate-200 bg-white/90 p-0 shadow-sm backdrop-blur-sm">
           <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
             <div>
@@ -300,7 +244,7 @@ export default function AdminDashboard(): JSX.Element {
       </section>
 
       {/* User Management */}
-      <section id="users" className="relative mx-auto mt-10 max-w-6xl px-6">
+      <section id="users" className="relative mt-10 w-full px-6">
         <div className="rounded-2xl border border-slate-200 bg-white/90 p-0 shadow-sm backdrop-blur-sm">
           <div className="border-b border-slate-200 px-6 py-4">
             <h2 className="text-lg font-semibold text-slate-900">User Management</h2>
@@ -339,7 +283,7 @@ export default function AdminDashboard(): JSX.Element {
       </section>
 
       {/* Service Destinations */}
-      <section id="destinations" className="relative mx-auto mt-10 max-w-6xl px-6 mb-20">
+      <section id="destinations" className="relative mt-10 w-full px-6 mb-20">
         <div className="rounded-2xl border border-slate-200 bg-white/90 p-0 shadow-sm backdrop-blur-sm">
           <div className="border-b border-slate-200 px-6 py-4">
             <h2 className="text-lg font-semibold text-slate-900">Service Destinations</h2>
@@ -382,11 +326,10 @@ export default function AdminDashboard(): JSX.Element {
   );
 }
 
-/* ---------- Quick Runtime Checks (kept lightweight) ---------- */
+/* ---------- Quick Runtime Checks ---------- */
 if (typeof window !== "undefined") {
   const csvSample = logsToCSV(initialLogs);
   console.assert(csvSample.split(/\r?\n/).length - 1 === initialLogs.length, "CSV row count mismatch");
-
   const before = [...initialUsers];
   const flipped = before.map((u) =>
     u.email === "john@example.com" ? { ...u, status: u.status === "Banned" ? "Active" : "Banned" } : u
@@ -394,9 +337,7 @@ if (typeof window !== "undefined") {
   const beforeStatus = before.find((u) => u.email === "john@example.com")?.status ?? "";
   const afterStatus  = flipped.find((u) => u.email === "john@example.com")?.status ?? "";
   console.assert(beforeStatus !== afterStatus, "Toggle ban logic failed");
-
   console.assert(csvSample.split(/\r?\n/)[0] === "Timestamp,Level,Message,User", "CSV header mismatch");
-
   const tricky: LogRow[] = [{ time: "t", level: "Info", message: 'He said "Hi, friend"', user: "u" }];
   const trickyCsv = logsToCSV(tricky);
   console.assert(/He said ""Hi, friend""/.test(trickyCsv), "CSV quotes not escaped correctly");
