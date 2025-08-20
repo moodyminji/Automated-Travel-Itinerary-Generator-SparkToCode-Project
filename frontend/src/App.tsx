@@ -14,6 +14,12 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
 import NotFound from './pages/NotFound';
 
+// NEW
+import SignUp from './pages/SignUp';
+import ForgotPassword from './pages/ForgetPassword';
+import AdminSecureLogin from './pages/AdminSecureLogin';
+
+
 export default function App() {
   return (
     <Layout>
@@ -30,8 +36,18 @@ export default function App() {
         <Route path="/notifications" element={<NotificationsCenter />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/admin" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+        {/* NEW: direct auth routes */}
+        <Route path="/login" element={<AdminLogin />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot" element={<ForgotPassword />} />
+
+        {/* Admin (nested) */}
+        <Route path="/admin">
+          <Route index element={<AdminLogin />} />             {/* /admin */}
+          <Route path="login" element={<AdminSecureLogin />} />
+          <Route path="dashboard" element={<AdminDashboard />} />  {/* /admin/dashboard */}
+        </Route>
 
         {/* 404 */}
         <Route path="/404" element={<NotFound />} />

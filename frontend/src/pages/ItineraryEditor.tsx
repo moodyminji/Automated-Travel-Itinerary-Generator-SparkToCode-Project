@@ -1,343 +1,249 @@
-// src/pages/ItineraryEditor.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useState } from "react";
+import { useThemeMode } from "../hooks/useThemeMode";
 import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Button, TextField } from '@mui/material';
-import { ensureItinerary, saveItinerary } from '../utils/itineraryStore';
-import type { Activity, ItineraryDay } from '../types';
+  DragDropContext,
+  Droppable,
+  Draggable,
+} from "@hello-pangea/dnd";
+import type { DropResult } from "@hello-pangea/dnd";
+import { useNavigate } from "react-router-dom";
+
+// ---------- Icons ----------
+const SaveIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+    <path d="M4 4h12l4 4v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+    <path d="M12 4v6H6V4" />
+  </svg>
+);
+
+const CancelIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+const UndoIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+    <path d="M3 7v6h6" />
+    <path d="M3 13a9 9 0 1 1 9 9h-4" />
+  </svg>
+);
+
+const AddIcon = ({ className = "w-4 h-4" }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const EditIcon = ({ className = "w-6 h-6", mode }: { className?: string; mode: "light" | "dark" }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={mode === "light" ? "#111827" : "#FFFFFF"}
+    strokeWidth="2.5"
+  >
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+  </svg>
+);
 
 
-type Params = { tripId?: string };
+// ---------- ItineraryEditor ----------
+export default function ItineraryEditor() {
+  const { mode } = useThemeMode();
+  const bgMain = mode === "light" ? "bg-[#FFFFFF]" : "bg-[#142A45]";
+  const textColor = mode === "light" ? "#111827" : "#FFFFFF";
+  const [items, setItems] = useState([
+    "Check-in at Hotel 12:00 PM",
+    "Lunch at Circolo Popolare 1:30 PM",
+    "Evening Cruise 7:30 PM",
+  ]);
+  const [newText, setNewText] = useState("");
+  const [history, setHistory] = useState<string[][]>([]);
+  const navigate = useNavigate();
 
-function SortableActivity({
-  a,
-  onChange,
-  onDelete,
-}: {
-  a: Activity;
-  onChange: (patch: Partial<Activity>) => void;
-  onDelete: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: a.id,
-  });
-  const style = { transform: CSS.Transform.toString(transform), transition };
+  // Helpers
+  const pushHistory = (prev: string[]) => setHistory((h) => [...h, prev]);
+
+  const addItem = (text: string) => {
+    if (!text.trim()) return;
+    pushHistory(items);
+    setItems([...items, text]);
+  };
+
+  const updateItem = (index: number, text: string) => {
+    pushHistory(items);
+    const next = [...items];
+    next[index] = text;
+    setItems(next);
+  };
+
+  const removeItem = (index: number) => {
+    pushHistory(items);
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    pushHistory(items);
+    const updated = Array.from(items);
+    const [moved] = updated.splice(result.source.index, 1);
+    updated.splice(result.destination.index, 0, moved);
+    setItems(updated);
+  };
+
+  // Toolbar
+  const handleSave = () => {
+    navigate("/itinerary/1", { state: { updated: true } });
+  };
+
+  const handleCancel = () => {
+    navigate("/itinerary/1", { state: { updated: false } });
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setItems(prev);
+    setHistory(history.slice(0, -1));
+  };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`border border-[--color-border] rounded-xl p-3 bg-surface/70 ${
-        isDragging ? 'opacity-70' : ''
-      }`}
-    >
-      <div className="flex gap-2 items-start">
-        <button
-          {...attributes}
-          {...listeners}
-          className="px-2 py-2 rounded-lg hover:bg-surface"
-          title="Drag to reorder"
-          aria-label="Drag"
-        >
-          ☰
-        </button>
-
-        <div className="grid md:grid-cols-4 gap-2 flex-1">
-          <TextField
-            label="Time"
-            size="small"
-            value={a.time ?? ''}
-            onChange={(e) => onChange({ time: e.target.value })}
-          />
-          <TextField
-            label="Title"
-            size="small"
-            value={a.title}
-            onChange={(e) => onChange({ title: e.target.value })}
-          />
-          <TextField
-            label="Location"
-            size="small"
-            value={a.location ?? ''}
-            onChange={(e) => onChange({ location: e.target.value })}
-          />
-          <TextField
-            label="Cost"
-            size="small"
-            type="number"
-            value={a.cost ?? ''}
-            onChange={(e) => onChange({ cost: Number(e.target.value || 0) })}
-          />
-
-          {/* Notes field */}
-          <TextField
-            className="md:col-span-4"
-            label="Notes"
-            size="small"
-            multiline
-            minRows={1}
-            maxRows={4}
-            value={a.notes ?? ''}
-            onChange={(e) => onChange({ notes: e.target.value })}
-          />
+    <div className="px-5 sm:px-6 flex flex-col items-center">
+      <div className={`mb-4 w-[800px] max-h-[500px] min-h-[500px] ${bgMain} shadow-sm overflow-y-auto`}>
+        <div className="mt-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <EditIcon className="w-6 h-6" mode={mode} />
+            <h1 className={`text-xl font-bold ${textColor}`}>Itinerary Editor</h1>
+          </div>
         </div>
 
-        <button
-          onClick={onDelete}
-          className="px-3 py-2 rounded-lg hover:bg-surface text-red-400"
-          title="Delete"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  );
-}
+        <div className="px-4 py-2 mt-6">
+          <p style={{color : "#D0CBCB"}}>
+            Edit your trip plan below. You can reorder, modify, or add new activities.
+          </p>
+          <h3 className={`text-sm font-bold ${textColor}`}>
+            Day 1: Arrival & Exploration
+          </h3>
+        </div>
 
-export default function ItineraryEditor() {
-  const { tripId = 'demo' } = useParams<Params>();
-  const nav = useNavigate();
+        <div className="px-4 py-3">
+          {/* Drag and Drop */}
+          {/* Drag and Drop */}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="droppable-day1">
+              {(provided) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="space-y-3"
+                >
+                  {items.map((t, i) => (
+                    <Draggable key={`item-${i}`} draggableId={`item-${i}`} index={i}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="bg-[#EDEDED] p-3 rounded-md"
+                        >
+                          <div
+                            className="flex items-center gap-2 bg-white rounded-md shadow-sm px-3 py-2 border border-slate-200"
+                          >
+                            {/* Drag handle */}
+                            <span {...provided.dragHandleProps} className="cursor-grab text-slate-500">
+                              ☰
+                            </span>
 
-  const fallback: ItineraryDay[] = useMemo(
-    () => [
-      {
-        day: 1,
-        activities: [
-          { id: 'a1', title: 'Visit museum', time: '10:00', location: 'City Museum', cost: 20, notes: 'Buy tickets online' },
-          { id: 'a2', title: 'Lunch at local café', time: '13:00', location: 'Old Town', cost: 15 },
-          { id: 'a3', title: 'Beach walk', time: '17:00', location: 'North Beach', cost: 0 },
-        ],
-      },
-      { day: 2, activities: [{ id: 'b1', title: 'Hiking trail', time: '09:00', notes: 'Bring water' }, { id: 'b2', title: 'Dinner cruise', time: '19:30' }] },
-    ],
-    []
-  );
+                            {/* Editable input */}
+                            <input
+                              type="text"
+                              value={t}
+                              onChange={(e) => updateItem(i, e.target.value)}
+                              className="flex-1 border-none bg-transparent focus:ring-0 text-sm text-slate-700"
+                            />
 
-  const [days, setDays] = useState<ItineraryDay[]>(() => ensureItinerary(tripId, fallback));
-  const [dayIdx, setDayIdx] = useState(0);
-  const [dirty, setDirty] = useState(false);
+                            {/* Delete button */}
+                            <button
+                              onClick={() => removeItem(i)}
+                              className="text-gray-400 hover:text-red-500 text-sm"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
 
-  // Undo stack
-  const historyRef = useRef<string[]>([]);
-  const pushHistory = (state: ItineraryDay[]) => {
-    historyRef.current.push(JSON.stringify(state));
-    if (historyRef.current.length > 30) historyRef.current.shift();
-  };
-  const undo = () => {
-    const prev = historyRef.current.pop();
-    if (prev) {
-      setDays(JSON.parse(prev));
-      setDirty(true);
-    }
-  };
 
-  useEffect(() => {
-    if (dayIdx > days.length - 1) setDayIdx(days.length - 1);
-  }, [days.length, dayIdx]);
-
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const items = (days[dayIdx]?.activities || []).map((a) => a.id);
-
-  const onDragEnd = (ev: DragEndEvent) => {
-    const { active, over } = ev;
-    if (!over || active.id === over.id) return;
-    pushHistory(days);
-    setDirty(true);
-    setDays((d) => {
-      const list = d.map((day, i) => {
-        if (i !== dayIdx) return day;
-        const curr = [...day.activities];
-        const from = curr.findIndex((x) => x.id === active.id);
-        const to = curr.findIndex((x) => x.id === over.id);
-        return { ...day, activities: arrayMove(curr, from, to) };
-      });
-      return list;
-    });
-  };
-
-  const editActivity = (id: string, patch: Partial<Activity>) => {
-    pushHistory(days);
-    setDirty(true);
-    setDays((d) =>
-      d.map((day, i) =>
-        i === dayIdx
-          ? { ...day, activities: day.activities.map((a) => (a.id === id ? { ...a, ...patch } : a)) }
-          : day
-      )
-    );
-  };
-
-  const deleteActivity = (id: string) => {
-    pushHistory(days);
-    setDirty(true);
-    setDays((d) =>
-      d.map((day, i) =>
-        i === dayIdx
-          ? { ...day, activities: day.activities.filter((a) => a.id !== id) }
-          : day
-      )
-    );
-  };
-
-  const [newAct, setNewAct] = useState<{ title: string; time?: string; location?: string; cost?: string; notes?: string }>(
-    { title: '', time: '', location: '', cost: '', notes: '' }
-  );
-
-  const addActivity = () => {
-    if (!newAct.title.trim()) return;
-    pushHistory(days);
-    setDirty(true);
-    setDays((d) =>
-      d.map((day, i) =>
-        i === dayIdx
-          ? {
-              ...day,
-              activities: [
-                ...day.activities,
-                {
-                  id: Math.random().toString(36).slice(2) + Date.now().toString(36),
-                  title: newAct.title.trim(),
-                  time: newAct.time || undefined,
-                  location: newAct.location || undefined,
-                  cost: newAct.cost ? Number(newAct.cost) : undefined,
-                  notes: newAct.notes || undefined,
-                },
-              ],
-            }
-          : day
-      )
-    );
-    setNewAct({ title: '', time: '', location: '', cost: '', notes: '' });
-  };
-
-  const save = () => {
-    saveItinerary(tripId, days);
-    setDirty(false);
-    nav(`/itinerary/${tripId}`);
-  };
-
-  const cancel = () => {
-    nav(`/itinerary/${tripId}`);
-  };
-
-  return (
-    <section className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="h2">Itinerary Editor</h1>
-        <div className="flex gap-2">
-          <button onClick={undo} className="px-3 py-2 rounded-xl border border-[--color-border] hover:bg-surface/70">
-            Undo
+          {/* Add new activity */}
+          <div className="flex items-center gap-2 mt-3">
+            <input
+              type="text"
+              placeholder="Add a new activity..."
+              value={newText}
+              onChange={(e) => setNewText(e.target.value)}
+              className={`flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-400 focus:ring-0 ${textColor}`}
+            />
+            <button
+              onClick={() => {
+                addItem(newText);
+                setNewText("");
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 text-white text-sm font-medium shadow hover:opacity-90"
+              style={{  backgroundColor: mode === "light" ? "#1D3557" : "#F5A623" }}
+            >
+              <AddIcon />
+              Add
+            </button>
+          </div>
+        </div>
+        <div className="flex justify-center gap-4 mt-5">
+          <button
+            onClick={handleSave}
+            className="inline-flex items-center gap-2 text-white px-4 py-2 text-sm font-bold shadow hover:opacity-90"
+            style={{ background: "#198754" }}
+          >
+            <SaveIcon />
+            Save Changes
           </button>
-          <button onClick={cancel} className="px-3 py-2 rounded-xl border border-[--color-border] hover:bg-surface/70">
+
+          <button
+            onClick={handleCancel}
+            className="inline-flex items-center gap-2 text-white px-4 py-2 text-sm font-bold shadow hover:opacity-90"
+            style={{ background: "#C0BEBB" }}
+          >
+            <CancelIcon />
             Cancel Changes
           </button>
-          <button onClick={save} className="btn-primary">Save Changes</button>
-        </div>
-      </div>
 
-      {/* Day selector */}
-      <div className="flex gap-2 flex-wrap">
-        {days.map((d, i) => (
           <button
-            key={d.day}
-            onClick={() => setDayIdx(i)}
-            className={`px-3 py-2 rounded-xl border border-[--color-border] ${
-              i === dayIdx ? 'bg-surface' : 'hover:bg-surface/70'
-            }`}
+            onClick={handleUndo}
+            className="inline-flex items-center gap-2 text-white px-4 py-2 font-bold text-sm shadow hover:opacity-90"
+            style={{ background: "#F47984" }}
           >
-            Day {d.day}
+            <UndoIcon />
+            Undo
           </button>
-        ))}
-        <Link
-          to={`/itinerary/${tripId}`}
-          className="ml-auto px-3 py-2 rounded-xl hover:bg-surface/70 border border-[--color-border]"
-        >
-          Back to Results
-        </Link>
-      </div>
-
-      {/* Activities list with drag-and-drop */}
-      <div className="card p-5 space-y-3">
-        <h3 className="font-semibold mb-2">Activities</h3>
-
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={items} strategy={verticalListSortingStrategy}>
-            <div className="grid gap-3">
-              {days[dayIdx]?.activities.map((a) => (
-                <SortableActivity
-                  key={a.id}
-                  a={a}
-                  onChange={(patch) => editActivity(a.id, patch)}
-                  onDelete={() => deleteActivity(a.id)}
-                />
-              ))}
-              {(!days[dayIdx] || days[dayIdx].activities.length === 0) && (
-                <p className="small text-muted">No activities yet. Add your first one below.</p>
-              )}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </div>
-
-      {/* Add new activity */}
-      <div className="card p-5">
-        <h3 className="font-semibold mb-3">Add Activity</h3>
-        <div className="grid md:grid-cols-5 gap-3">
-          <TextField
-            label="Time"
-            size="small"
-            value={newAct.time}
-            onChange={(e) => setNewAct((p) => ({ ...p, time: e.target.value }))}
-          />
-          <TextField
-            label="Title"
-            size="small"
-            value={newAct.title}
-            onChange={(e) => setNewAct((p) => ({ ...p, title: e.target.value }))}
-          />
-          <TextField
-            label="Location"
-            size="small"
-            value={newAct.location}
-            onChange={(e) => setNewAct((p) => ({ ...p, location: e.target.value }))}
-          />
-          <TextField
-            label="Cost"
-            size="small"
-            type="number"
-            value={newAct.cost}
-            onChange={(e) => setNewAct((p) => ({ ...p, cost: e.target.value }))}
-          />
-          <TextField
-            className="md:col-span-5"
-            label="Notes"
-            size="small"
-            multiline
-            minRows={1}
-            maxRows={4}
-            value={newAct.notes}
-            onChange={(e) => setNewAct((p) => ({ ...p, notes: e.target.value }))}
-          />
-        </div>
-        <div className="mt-3">
-          <Button variant="contained" onClick={addActivity}>Add Activity</Button>
-          {dirty && <span className="small text-muted ml-3">Unsaved changes</span>}
         </div>
       </div>
-    </section>
+
+    </div>
   );
 }
