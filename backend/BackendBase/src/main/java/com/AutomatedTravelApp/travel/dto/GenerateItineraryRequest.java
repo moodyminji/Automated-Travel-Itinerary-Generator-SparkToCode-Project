@@ -31,5 +31,6 @@ public class GenerateItineraryRequest {
         boolean hasDates = startDate != null && endDate != null && !endDate.isBefore(startDate);
         return hasDays || hasDates;
     }
+
 }
 

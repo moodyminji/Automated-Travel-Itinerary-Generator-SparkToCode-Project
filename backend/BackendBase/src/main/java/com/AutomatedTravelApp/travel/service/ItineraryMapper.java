@@ -21,6 +21,7 @@ public class ItineraryMapper {
         resp.setDestination(trip.getDestination());
         resp.setStartDate(trip.getStartDate());
         resp.setEndDate(trip.getEndDate());
+        resp.setTotalBudget(trip.getBudgetAmount() != null ? trip.getBudgetAmount().doubleValue() : null);
 
         var dayDtos = new ArrayList<GenerateItineraryResponse.ItineraryDayDto>();
         for (var d : days) {

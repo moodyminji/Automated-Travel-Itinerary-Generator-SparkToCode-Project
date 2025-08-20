@@ -39,12 +39,14 @@ public class ItineraryService {
         LocalDate start = req.getStartDate() != null ? req.getStartDate() : LocalDate.now();
         LocalDate end = req.getEndDate() != null ? req.getEndDate() : start.plusDays(Math.max(1, req.getDays()));
 
+
         Trip trip = Trip.builder()
                 .user(user)
                 .destination(req.getDestination())
                 .startDate(start)
                 .endDate(end)
-                .budgetAmount(BigDecimal.ZERO)
+                .budgetAmount(req.getBudget() != null
+                        ? BigDecimal.valueOf(req.getBudget()) : BigDecimal.ZERO)
                 .budgetCurrency("OMR")
                 .build();
         trip = tripRepository.save(trip);
