@@ -2,7 +2,7 @@ package org.example;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
-import com.AutomatedTravelApp.travel.dto.GenerateItineraryResponse;
+
 
 
 
@@ -15,6 +15,7 @@ public class AIEngine {
                             "gemini-2.5-flash",
                             "Explain how AI works in a few words",
                             null);
+
 
             System.out.println(response.text());
         }
