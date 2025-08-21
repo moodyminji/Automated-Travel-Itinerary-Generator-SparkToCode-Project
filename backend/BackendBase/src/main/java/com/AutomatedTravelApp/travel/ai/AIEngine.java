@@ -31,10 +31,30 @@ public class AIEngine {
                 .findFirst()
                 .map(Activity::getCostCurrency)
                 .orElse(trip.getBudgetCurrency());
-
+//pulling from other files in db
         String itineraryId = responseData.getItineraryId() != null ?
                 responseData.getItineraryId().toString() :
                 "ITIN-" + System.currentTimeMillis();
+
+        String travelStyle = responseData.getTravelStyle() != null ? responseData.getTravelStyle() : "Balanced";
+
+        String pacingRules; //pacing rules for travel style
+        switch (travelStyle.toLowerCase()) {
+            case "luxury":
+                pacingRules = "Max 2 activities/day, rest every 2-3 days, total activity duration 4-5 hrs, more budget on hotel & food";
+                break;
+            case "budget":
+                pacingRules = "Max 3 activities/day, rest every 4-5 days, total activity duration 6-7 hrs, balanced budget";
+                break;
+            case "adventure":
+                pacingRules = "4+ activities/day, rest optional, total activity duration 8-10 hrs, more budget on activities";
+                break;
+            case "family":
+                pacingRules = "2-3 activities/day, rest every 3 days, total activity duration 5-6 hrs, balanced budget with focus on comfort & convenience";
+                break;
+            default:
+                pacingRules = "Balanced pacing rules";
+        }
 
         String prompt = """
                 You are a travel planning AI. Generate a complete travel itinerary for a user based on the following information:
@@ -86,7 +106,9 @@ public class AIEngine {
                 End Date: %s
                 Budget: %.2f
                 Preferences: %s
-                """.formatted(itineraryId, currency, destination, startDate, endDate, budget, preferences);
+                Travel Style: %s
+                Pacing Rules: %s
+                """.formatted(itineraryId, currency, destination, startDate, endDate, budget, preferences, travelStyle, pacingRules);
 
         GenerateContentResponse response = client.models.generateContent(
                 "gemini-2.5-flash",
@@ -95,14 +117,14 @@ public class AIEngine {
         );
 
         String rawText = response.text();
-        String cleanedJson = cleanJson(rawText);
+        String finalJson = cleanJson(rawText);
 
-        objectMapper.readTree(cleanedJson);
+        objectMapper.readTree(finalJson);
 
-        return cleanedJson;
+        return finalJson; //final output
     }
 
-    private static String cleanJson(String raw) {
+    private static String cleanJson(String raw) { //making sure it's in the correct JSON format
         if (raw == null) return "{}";
         String cleaned = raw.trim();
         if (cleaned.startsWith("```")) {
