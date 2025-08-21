@@ -8,7 +8,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,4 +60,10 @@ public class Trip extends BaseEntity {
     @Column(name = "amount")
     @Builder.Default
     private Map<String, Double> budgetBreakdown = new LinkedHashMap<>();
+
+    private double flightCost;
+    private double hotelCost;
+    private double activityCost;
+
+
 }

@@ -5,7 +5,6 @@ import com.AutomatedTravelApp.travel.model.Activity;
 import com.AutomatedTravelApp.travel.model.ItineraryDay;
 import com.AutomatedTravelApp.travel.model.Trip;
 import org.springframework.stereotype.Component;
-import com.AutomatedTravelApp.travel.model.TravelStyle;
 
 
 import java.util.ArrayList;

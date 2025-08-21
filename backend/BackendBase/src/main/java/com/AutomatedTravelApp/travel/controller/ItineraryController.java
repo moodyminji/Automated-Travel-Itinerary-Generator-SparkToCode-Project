@@ -1,5 +1,6 @@
 package com.AutomatedTravelApp.travel.controller;
 
+import com.AutomatedTravelApp.travel.dto.BudgetBreakdown;
 import com.AutomatedTravelApp.travel.dto.GenerateItineraryRequest;
 import com.AutomatedTravelApp.travel.dto.GenerateItineraryResponse;
 import com.AutomatedTravelApp.travel.service.ItineraryService;
@@ -39,5 +40,16 @@ public class ItineraryController {
             @PathVariable Long id,
             @RequestBody GenerateItineraryRequest request) {
         return ResponseEntity.ok(itineraryService.updateItinerary(id, request));
+    }
+    @GetMapping("/{id}/budget")
+    public BudgetBreakdown getBudget(@PathVariable Long id) {
+        GenerateItineraryResponse response = itineraryService.getById(id);
+        BudgetBreakdown breakdown = new BudgetBreakdown();
+        if (response.getBudgetBreakdown() != null) {
+            breakdown.flightCost = response.getBudgetBreakdown().getOrDefault("flight", 0.0);
+            breakdown.hotelCost = response.getBudgetBreakdown().getOrDefault("hotel", 0.0);
+            breakdown.activityCost = response.getBudgetBreakdown().getOrDefault("activity", 0.0);
+        }
+        return breakdown;
     }
 }

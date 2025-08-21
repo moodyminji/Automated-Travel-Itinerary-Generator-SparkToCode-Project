@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
-import org.springframework.data.domain.Sort;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,10 +39,11 @@ public GenerateItineraryResponse generate(GenerateItineraryRequest req) {
     LocalDate end   = Optional.ofNullable(req.getEndDate()).orElse(start.plusDays(Math.max(1, req.getDays())));
 
     String style = Optional.ofNullable(req.getTravelStyle())
+            .map(Object::toString)
             .map(String::toLowerCase)
             .filter(s -> Set.of("luxury","comfort","budget").contains(s))
             .orElse("comfort");
-
+    
     Map<String, Double> breakdown = (req.getBudgetBreakdown() != null && !req.getBudgetBreakdown().isEmpty())
             ? new LinkedHashMap<>(req.getBudgetBreakdown())
             : defaultBreakdownFor(style, 1000.0); // default total (OMR)
@@ -80,8 +79,11 @@ public GenerateItineraryResponse generate(GenerateItineraryRequest req) {
             .build();
     activityRepository.save(a);
 
-    var days = dayRepository.findByTripId(trip.getId());
-    var acts = activityRepository.findByItineraryDayTripId(trip.getId());
+    var days = dayRepository.findByTripOrderByDayNumberAsc(trip);
+    var acts = new ArrayList<Activity>();
+    for (var d : days) {
+        acts.addAll(activityRepository.findByItineraryDayOrderByPosition(d));
+    }
     var res = mapper.fromTrip(trip, days, acts);
     res.setMessage("Itinerary created");
     return res;
@@ -115,8 +117,11 @@ public GenerateItineraryResponse generate(GenerateItineraryRequest req) {
 
         trip = tripRepository.save(trip);
 
-        var days = dayRepository.findByTripId(id);
-        var acts = activityRepository.findByItineraryDayTripId(id);
+        var days = dayRepository.findByTripOrderByDayNumberAsc(trip);
+        var acts = new ArrayList<Activity>();
+        for (var d : days) {
+            acts.addAll(activityRepository.findByItineraryDayOrderByPosition(d));
+        }
         var res = mapper.fromTrip(trip, days, acts);
         res.setMessage("Itinerary updated");
         return res;
