@@ -1,7 +1,8 @@
 // src/pages/TripForm.tsx
-import React, { useState } from "react";
-import { Calendar, DollarSign, Users, Search, X } from "lucide-react";
-import { useThemeMode } from "../hooks/useThemeMode"; // for dark-mode styling
+import React, { useRef, useState } from "react";
+import { Calendar as CalIcon, DollarSign, Users, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useThemeMode } from "../hooks/useThemeMode";
 
 interface TripData {
   destination: string;
@@ -17,8 +18,27 @@ const CARD_DARK = "#122033";
 const TEXT_DARK = "#DDE9F7";
 const SUBTEXT_DARK = "#B6C2D4";
 
+// lightweight client-side suggestions
+const DESTINATIONS = [
+  "Muscat, Oman",
+  "Salalah, Oman",
+  "Dubai, UAE",
+  "Abu Dhabi, UAE",
+  "Doha, Qatar",
+  "Riyadh, Saudi Arabia",
+  "Jeddah, Saudi Arabia",
+  "Manama, Bahrain",
+  "Kuwait City, Kuwait",
+  "Cairo, Egypt",
+  "Istanbul, Türkiye",
+  "Amman, Jordan",
+  "Beirut, Lebanon",
+  "Marrakesh, Morocco",
+];
+
 const TripForm: React.FC = () => {
   const { mode } = useThemeMode();
+  const nav = useNavigate();
 
   const [tripData, setTripData] = useState<TripData>({
     destination: "",
@@ -30,6 +50,7 @@ const TripForm: React.FC = () => {
   });
 
   const [destinationQuery, setDestinationQuery] = useState("");
+  const [openSuggestions, setOpenSuggestions] = useState(false);
 
   const isFormValid =
     tripData.destination && tripData.startDate && tripData.endDate;
@@ -55,10 +76,44 @@ const TripForm: React.FC = () => {
   };
 
   const isDark = mode === "dark";
+  const iconColor = isDark ? "#94A3B8" : "#9CA3AF";
+
+  // LEFT inline SVG icons (keeps your design)
+  const searchSvg = encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='${iconColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>`
+  );
+  const calSvg = encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='${iconColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2' ry='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>`
+  );
+
+  const suggestions =
+    destinationQuery.trim().length < 1
+      ? []
+      : DESTINATIONS.filter((d) =>
+          d.toLowerCase().includes(destinationQuery.toLowerCase())
+        ).slice(0, 8);
+
+  // navigate
+  const handleCancel = () => nav("/profile");
+  const handleGenerate = () => {
+    if (!isFormValid) return;
+    nav("/itinerary/1", { state: { tripData } });
+  };
+
+  // refs for programmatic date-picker open
+  const depRef = useRef<HTMLInputElement>(null);
+  const retRef = useRef<HTMLInputElement>(null);
 
   return (
     // No page background here — we rely on Layout's background
     <div className="min-h-screen flex flex-col">
+      {/* Hide native picker icon; we provide our own right-side button */}
+      <style>{`
+        .no-native::-webkit-calendar-picker-indicator { display: none; }
+        .no-native::-webkit-inner-spin-button,
+        .no-native::-webkit-clear-button { display: none; }
+      `}</style>
+
       {/* Content */}
       <main className="flex flex-1 items-center justify-center px-4 py-10">
         <div
@@ -85,28 +140,30 @@ const TripForm: React.FC = () => {
               Where do you want to go?
             </label>
             <div className="relative">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
-                style={{ color: isDark ? SUBTEXT_DARK : "#9ca3af" }}
-              />
               <input
                 id="destination"
                 type="text"
                 value={destinationQuery}
                 onChange={(e) => {
-                  setDestinationQuery(e.target.value);
-                  setTripData((prev) => ({
-                    ...prev,
-                    destination: e.target.value,
-                  }));
+                  const v = e.target.value;
+                  setDestinationQuery(v);
+                  setTripData((prev) => ({ ...prev, destination: v }));
+                  setOpenSuggestions(true);
                 }}
+                onFocus={() => setOpenSuggestions(true)}
+                onBlur={() => setTimeout(() => setOpenSuggestions(false), 100)}
                 placeholder="e.g., Muscat, Oman"
-                className="w-full pl-12 pr-12 py-3 border rounded-xl focus:ring-2 focus:outline-none"
+                className="w-full pr-12 py-3 border rounded-xl focus:ring-2 focus:outline-none"
                 style={{
                   backgroundColor: "#ffffff",
                   color: "#0f172a",
                   borderColor: "#d1d5db",
                   boxShadow: "inset 0 0 0 1px transparent",
+                  backgroundImage: `url("data:image/svg+xml;utf8,${searchSvg}")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "12px 50%",
+                  backgroundSize: "20px 20px",
+                  paddingLeft: "48px",
                 }}
               />
               {destinationQuery && (
@@ -123,6 +180,35 @@ const TripForm: React.FC = () => {
                   <X className="w-5 h-5" />
                 </button>
               )}
+
+              {/* Autocomplete dropdown */}
+              {openSuggestions && suggestions.length > 0 && (
+                <ul
+                  className="absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border"
+                  style={{
+                    backgroundColor: "#ffffff",
+                    borderColor: "#e5e7eb",
+                  }}
+                >
+                  {suggestions.map((s) => (
+                    <li key={s}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setDestinationQuery(s);
+                          setTripData((prev) => ({ ...prev, destination: s }));
+                          setOpenSuggestions(false);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                        style={{ color: "#0f172a" }}
+                      >
+                        {s}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 
@@ -137,11 +223,8 @@ const TripForm: React.FC = () => {
                 Departure Date
               </label>
               <div className="relative">
-                <Calendar
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
-                  style={{ color: isDark ? SUBTEXT_DARK : "#9ca3af" }}
-                />
                 <input
+                  ref={depRef}
                   id="departure"
                   type="date"
                   value={tripData.startDate}
@@ -151,13 +234,36 @@ const TripForm: React.FC = () => {
                       startDate: e.target.value,
                     }))
                   }
-                  className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:outline-none"
+                  className="tf-date no-native w-full py-3 border rounded-xl focus:ring-2 focus:outline-none"
                   style={{
                     backgroundColor: "#ffffff",
                     color: "#0f172a",
                     borderColor: "#d1d5db",
+                    // LEFT calendar icon (matches your design)
+                    backgroundImage: `url("data:image/svg+xml;utf8,${calSvg}")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "12px 50%",
+                    backgroundSize: "20px 20px",
+                    paddingLeft: "48px",
+                    // room for our right-side button
+                    paddingRight: "44px",
                   }}
                 />
+                {/* Our right-side calendar button (works in dark mode) */}
+                <button
+                  type="button"
+                  aria-label="Open date picker"
+                  title="Open date picker"
+                  onClick={() => {
+                    const el = depRef.current;
+                    if (el?.showPicker) el.showPicker();
+                    else el?.focus();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: isDark ? SUBTEXT_DARK : "#0f172a" }}
+                >
+                  <CalIcon size={18} />
+                </button>
               </div>
             </div>
             <div>
@@ -169,11 +275,8 @@ const TripForm: React.FC = () => {
                 Return Date
               </label>
               <div className="relative">
-                <Calendar
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
-                  style={{ color: isDark ? SUBTEXT_DARK : "#9ca3af" }}
-                />
                 <input
+                  ref={retRef}
                   id="return"
                   type="date"
                   value={tripData.endDate}
@@ -183,13 +286,33 @@ const TripForm: React.FC = () => {
                       endDate: e.target.value,
                     }))
                   }
-                  className="w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:outline-none"
+                  className="tf-date no-native w-full py-3 border rounded-xl focus:ring-2 focus:outline-none"
                   style={{
                     backgroundColor: "#ffffff",
                     color: "#0f172a",
                     borderColor: "#d1d5db",
+                    backgroundImage: `url("data:image/svg+xml;utf8,${calSvg}")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "12px 50%",
+                    backgroundSize: "20px 20px",
+                    paddingLeft: "48px",
+                    paddingRight: "44px",
                   }}
                 />
+                <button
+                  type="button"
+                  aria-label="Open date picker"
+                  title="Open date picker"
+                  onClick={() => {
+                    const el = retRef.current;
+                    if (el?.showPicker) el.showPicker();
+                    else el?.focus();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: isDark ? SUBTEXT_DARK : "#0f172a" }}
+                >
+                  <CalIcon size={18} />
+                </button>
               </div>
             </div>
           </div>
@@ -314,6 +437,8 @@ const TripForm: React.FC = () => {
                 backgroundColor: ACCENT,
                 color: "#1F2937",
               }}
+              onClick={handleCancel}
+              type="button"
             >
               Cancel
             </button>
@@ -325,6 +450,8 @@ const TripForm: React.FC = () => {
                 color: ACCENT,
               }}
               disabled={!isFormValid}
+              onClick={handleGenerate}
+              type="button"
             >
               Generate Itinerary
             </button>
