@@ -14,6 +14,8 @@ public class AIEngine {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    public String finalJson; // stores the last generated JSON
+
     public AIEngine() {
         this.client = new Client();
     }
@@ -31,14 +33,14 @@ public class AIEngine {
                 .findFirst()
                 .map(Activity::getCostCurrency)
                 .orElse(trip.getBudgetCurrency());
-//pulling from other files in db
+
         String itineraryId = responseData.getItineraryId() != null ?
                 responseData.getItineraryId().toString() :
                 "ITIN-" + System.currentTimeMillis();
 
         String travelStyle = responseData.getTravelStyle() != null ? responseData.getTravelStyle() : "Balanced";
 
-        String pacingRules; //pacing rules for travel style
+        String pacingRules;
         switch (travelStyle.toLowerCase()) {
             case "luxury":
                 pacingRules = "Max 2 activities/day, rest every 2-3 days, total activity duration 4-5 hrs, more budget on hotel & food";
@@ -117,14 +119,14 @@ public class AIEngine {
         );
 
         String rawText = response.text();
-        String finalJson = cleanJson(rawText);
+        finalJson = cleanJson(rawText); // store in class-level variable
 
         objectMapper.readTree(finalJson);
 
-        return finalJson; //final output
+        return finalJson;
     }
 
-    private static String cleanJson(String raw) { //making sure it's in the correct JSON format
+    private static String cleanJson(String raw) {
         if (raw == null) return "{}";
         String cleaned = raw.trim();
         if (cleaned.startsWith("```")) {
