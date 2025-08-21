@@ -6,6 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+
+
+
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
@@ -20,6 +24,8 @@ public class GenerateItineraryResponse {
     private LocalDate endDate;
     private Double totalBudget;
     private Double estimatedCost;
+    private String travelStyle;
+    private Map<String, Double> budgetBreakdown;
 
     private FlightDto flight;
     private AccommodationDto accommodation;
@@ -63,5 +69,6 @@ public class GenerateItineraryResponse {
         private Integer dayNumber;
         private Boolean restDay;
         private String notes;
+        
     }
 }

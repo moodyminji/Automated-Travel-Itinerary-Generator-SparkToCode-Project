@@ -8,7 +8,10 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "trips", indexes = {
@@ -41,9 +44,21 @@ public class Trip extends BaseEntity {
     @Column(length = 3, nullable = false)
     @Builder.Default
     private String budgetCurrency = "OMR";
-
+    
+       /** "luxury" | "comfort" | "budget" */
+    @Column(length = 20)
+    @Builder.Default
+    private String travelStyle = "comfort";
+    
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dayNumber ASC")
     @Builder.Default
     private List<ItineraryDay> days = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "trip_budget", joinColumns = @JoinColumn(name = "trip_id"))
+    @MapKeyColumn(name = "category")   // e.g. accommodation, flights, activities, food, misc
+    @Column(name = "amount")
+    @Builder.Default
+    private Map<String, Double> budgetBreakdown = new LinkedHashMap<>();
 }

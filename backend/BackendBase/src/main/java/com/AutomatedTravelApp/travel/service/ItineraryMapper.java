@@ -5,9 +5,13 @@ import com.AutomatedTravelApp.travel.model.Activity;
 import com.AutomatedTravelApp.travel.model.ItineraryDay;
 import com.AutomatedTravelApp.travel.model.Trip;
 import org.springframework.stereotype.Component;
+import com.AutomatedTravelApp.travel.model.TravelStyle;
+
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class ItineraryMapper {
@@ -21,7 +25,9 @@ public class ItineraryMapper {
         resp.setDestination(trip.getDestination());
         resp.setStartDate(trip.getStartDate());
         resp.setEndDate(trip.getEndDate());
-        resp.setTotalBudget(trip.getBudgetAmount() != null ? trip.getBudgetAmount().doubleValue() : null);
+        resp.setTotalBudget(trip.getBudgetAmount() == null ? 0.0 : trip.getBudgetAmount().doubleValue());
+        resp.setTravelStyle(trip.getTravelStyle());
+        resp.setBudgetBreakdown(trip.getBudgetBreakdown() == null ? Map.of() : new LinkedHashMap<>(trip.getBudgetBreakdown()));
 
         var dayDtos = new ArrayList<GenerateItineraryResponse.ItineraryDayDto>();
         for (var d : days) {

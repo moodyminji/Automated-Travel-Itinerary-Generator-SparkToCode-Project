@@ -22,8 +22,7 @@ class ItineraryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @MockBean
+    
     private ItineraryService itineraryService;
 
     @Test

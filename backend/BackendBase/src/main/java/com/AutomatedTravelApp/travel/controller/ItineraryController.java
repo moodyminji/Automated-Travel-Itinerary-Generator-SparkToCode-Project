@@ -30,10 +30,14 @@ public class ItineraryController {
         }
         return ResponseEntity.ok(itineraryService.generate(request));
     }
-
-
     @GetMapping("/{id}")
     public ResponseEntity<GenerateItineraryResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(itineraryService.getById(id));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<GenerateItineraryResponse> updateItinerary(
+            @PathVariable Long id,
+            @RequestBody GenerateItineraryRequest request) {
+        return ResponseEntity.ok(itineraryService.updateItinerary(id, request));
     }
 }
