@@ -6,10 +6,16 @@ import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+
+import jakarta.validation.constraints.AssertTrue;
+import com.AutomatedTravelApp.travel.model.TravelStyle;
+
+
 
 @Data
 public class GenerateItineraryRequest {
-    @NotBlank
+    @NotBlank(message = "destination is required")
     private String destination;
 
     @Min(1)
@@ -24,8 +30,12 @@ public class GenerateItineraryRequest {
     private List<String> interests;
 
     private Integer budget;
+
     private String travelStyle;
 
+    private Map<String, Double> budgetBreakdown;
+
+    @AssertTrue(message = "Provide either 'days' or both 'startDate' and 'endDate'")
     public boolean isDaysOrDatesProvided() {
         boolean hasDays = days != null && days >= 1;
         boolean hasDates = startDate != null && endDate != null && !endDate.isBefore(startDate);
