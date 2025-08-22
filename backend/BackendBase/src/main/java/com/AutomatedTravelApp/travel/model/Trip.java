@@ -12,6 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import java.util.Set;
+import java.util.HashSet;
+
 @Entity
 @Table(name = "trips", indexes = {
         @Index(name = "ix_trips_user", columnList = "user_id"),
@@ -60,6 +65,17 @@ public class Trip extends BaseEntity {
     @Column(name = "amount")
     @Builder.Default
     private Map<String, Double> budgetBreakdown = new LinkedHashMap<>();
+
+    @ElementCollection(fetch = FetchType.EAGER, targetClass = TravelInterest.class)
+    @CollectionTable(name = "trip_interests", joinColumns = @JoinColumn(name = "trip_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "interest")
+    @Builder.Default
+    private Set<TravelInterest> interests = new HashSet<>();
+
+    @Min(1)
+    @Column(name = "people_count")
+    private Integer peopleCount;
 
     private double flightCost;
     private double hotelCost;

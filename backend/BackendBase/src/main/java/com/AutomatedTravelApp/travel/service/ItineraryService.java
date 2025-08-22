@@ -58,6 +58,8 @@ public GenerateItineraryResponse generate(GenerateItineraryRequest req) {
             .budgetAmount(total)
             .travelStyle(style)
             .budgetBreakdown(breakdown)
+            .interests(Optional.ofNullable(req.getInterests()).orElse(Set.of()))
+            .peopleCount(Optional.ofNullable(req.getPeopleCount()).orElse(1))
             .build();
     trip = tripRepository.save(trip);
 
@@ -114,6 +116,14 @@ public GenerateItineraryResponse generate(GenerateItineraryRequest req) {
             double total = trip.getBudgetBreakdown().values().stream().mapToDouble(Double::doubleValue).sum();
             trip.setBudgetAmount(BigDecimal.valueOf(total));
         }
+        if (req.getInterests() != null) {
+            trip.setInterests(req.getInterests());
+        }
+
+        if (req.getPeopleCount() != null && req.getPeopleCount() >= 1) {
+            trip.setPeopleCount(req.getPeopleCount());
+        }
+
 
         trip = tripRepository.save(trip);
 
