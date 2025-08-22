@@ -27,6 +27,8 @@ public class ItineraryMapper {
         resp.setTotalBudget(trip.getBudgetAmount() == null ? 0.0 : trip.getBudgetAmount().doubleValue());
         resp.setTravelStyle(trip.getTravelStyle());
         resp.setBudgetBreakdown(trip.getBudgetBreakdown() == null ? Map.of() : new LinkedHashMap<>(trip.getBudgetBreakdown()));
+        resp.setInterests(trip.getInterests());
+        resp.setPeopleCount(trip.getPeopleCount());
 
         var dayDtos = new ArrayList<GenerateItineraryResponse.ItineraryDayDto>();
         for (var d : days) {
