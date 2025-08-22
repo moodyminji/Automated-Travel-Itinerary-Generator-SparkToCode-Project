@@ -8,8 +8,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 import com.AutomatedTravelApp.travel.model.User;
-import com.AutomatedTravelApp.travel.model.Role; // <-- if you have Role enum
+import com.AutomatedTravelApp.travel.model.Role;
 import com.AutomatedTravelApp.travel.repository.UserRepository;
+import org.springframework.context.annotation.Profile;
+
 
 @SpringBootApplication
 public class TravelApplication {
@@ -19,6 +21,7 @@ public class TravelApplication {
     }
 
     @Bean
+    @Profile("!test")
     CommandLineRunner seedAdmins(UserRepository users) {
         return args -> {
             Stream.of("admin1@tajawal.com", "admin2@tajawal.com", "admin3@tajawal.com")
