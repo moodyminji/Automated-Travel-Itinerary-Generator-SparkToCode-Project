@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +19,10 @@ public class User extends BaseEntity {
     @Email @NotBlank
     @Column(nullable = false, unique = true, length = 160)
     private String email;
+    
+    @Builder.Default
+    private boolean emailVerified = false;
+    private String verificationToken;
 
     @NotBlank
     @Column(nullable = false, length = 255)
@@ -31,4 +34,8 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Trip> trips = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Role role = Role.USER;
 }
