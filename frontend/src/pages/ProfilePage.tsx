@@ -19,7 +19,7 @@ type Prefs = {
 
 const KEY = 'tajawal:prefs';
 const ORANGE = '#FBBF24';
-const NAVY = '#0F2742';
+const NAVY = '#111827';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -76,7 +76,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen relative z-10 px-5 pt-6 pb-40">
+    <div className="min-h-screen z-10 px-5 pt-6 pb-40">
       {/* Content grid */}
       <div className="mx-auto max-w-7xl grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-12">
         {/* LEFT column */}

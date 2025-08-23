@@ -14,10 +14,9 @@ export default function AdminLogin() {
   const { mode } = useThemeMode();
 
   const isDark = mode === "dark";
-  const CARD_DARK = "#122033";
-  const TEXT_DARK = "#DDE9F7";
+  const CARD_DARK = "#142A45";
+  const TEXT_DARK = "#ffffffff";
   const SUBTEXT_DARK = "#B6C2D4";
-  const ACCENT = "#F4A83F";
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +35,11 @@ export default function AdminLogin() {
     <div className="relative min-h-screen overflow-hidden">
       <main className="relative z-10 flex items-start md:items-center justify-center px-4 pt-24 pb-16 md:pt-28">
         <section
-          className="w-full max-w-xl rounded-2xl shadow-xl border px-8 md:px-12 py-10 relative"
+          className="w-full max-w-xl shadow-xl border px-8 md:px-12 py-10 relative"
           style={{
-            backgroundColor: isDark ? CARD_DARK : "#ffffff",
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
+            // Match Sign Up card colors exactly
+            backgroundColor: isDark ? CARD_DARK : "#FFFFFF",
+            border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb"}`,
           }}
         >
           {/* Link to admin-secure login page (unchanged route) */}
@@ -53,7 +53,7 @@ export default function AdminLogin() {
 
           <h1
             className="text-4xl font-extrabold text-center"
-            style={{ color: isDark ? TEXT_DARK : "#122033" }}
+            style={{ color: isDark ? TEXT_DARK : "#1C2B39" }}
           >
             Log In
           </h1>
@@ -77,13 +77,13 @@ export default function AdminLogin() {
             </div>
           )}
 
-          <form onSubmit={submit} className="mt-8 space-y-5">
+          <form onSubmit={submit} className="mt-8 space-y-5 flex flex-col items-center">
             <input
               type="email"
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl px-4 py-3 text-[17px] outline-none focus:ring-2 transition border"
+              className="w-100 h-15 rounded-xl px-3 py-2 text-[15px] outline-none focus:ring-2 transition border"
               style={{
                 backgroundColor: "#ffffff",
                 color: "#0f172a",
@@ -97,7 +97,7 @@ export default function AdminLogin() {
               placeholder="Enter your password"
               value={pwd}
               onChange={(e) => setPwd(e.target.value)}
-              className="w-full rounded-xl px-4 py-3 text-[17px] outline-none focus:ring-2 transition border"
+              className="w-100 h-15 rounded-xl px-3 py-2 text-[15px] outline-none focus:ring-2 transition border"
               style={{
                 backgroundColor: "#ffffff",
                 color: "#0f172a",
@@ -117,11 +117,11 @@ export default function AdminLogin() {
 
             <button
               type="submit"
-              className="mx-auto block w-56 rounded-xl border-2 font-semibold py-3 transition"
+              className="mx-auto block w-40 border-2 font-bold py-3 transition"
               style={{
-                borderColor: ACCENT,
-                color: ACCENT,
-                backgroundColor: isDark ? "transparent" : "transparent",
+                borderColor: "#F5A623",       // stroke
+                color: "#F5A623",             // text
+                backgroundColor: "#ffffff",   // fill white (both modes)
               }}
             >
               Log in
@@ -146,7 +146,7 @@ export default function AdminLogin() {
             />
           </div>
 
-          {/* Social icons (unchanged) */}
+          {/* Social login (Google only, same hover style as Sign Up) */}
           <div className="text-center">
             <p
               className="text-sm mb-3"
@@ -154,10 +154,22 @@ export default function AdminLogin() {
             >
               Login using
             </p>
-            <div className="flex justify-center gap-6">
-              <GoogleIcon className="h-8 w-8" />
-              <AppleIcon className="h-8 w-8" />
-              <FacebookIcon className="h-8 w-8" />
+            <div className="flex justify-center">
+              <button
+                type="button"
+                className="p-2 rounded transition-colors"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDark ? "#1f3555" : "#f3f4f6";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = isDark ? "#142A45" : "#ffffff";
+                }}
+                style={{
+                  backgroundColor: isDark ? "#142A45" : "#ffffff",
+                }}
+              >
+                <GoogleIcon className="w-9 h-9" />
+              </button>
             </div>
           </div>
 
@@ -168,7 +180,7 @@ export default function AdminLogin() {
             <Link
               to="/signup"
               className="font-semibold"
-              style={{ color: isDark ? TEXT_DARK : "#122033" }}
+              style={{ color: isDark ? TEXT_DARK : "#475569" }}
             >
               Create a new account
             </Link>
@@ -179,30 +191,26 @@ export default function AdminLogin() {
   );
 }
 
-/* Tiny SVG icons (same visuals) */
+/* Tiny SVG icon */
 function GoogleIcon({ className = "" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 31.7 29.3 35 24 35c-6.6 0-12-5.4-12-12S17.4 11 24 11c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.8 5.3 29.7 3 24 3 16 3 8.9 7.6 6.3 14.7z" />
-      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16.2 18.8 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.8 5.3 29.7 3 24 3 16 3 8.9 7.6 6.3 14.7z" />
-      <path fill="#4CAF50" d="M24 45c5.2 0 10-2 13.5-5.3l-6.2-5.1C29.2 36.1 26.8 37 24 37c-5.3 0-9.8-3.4-11.3-8.1l-6.4 4.9C8.8 41.9 15.8 45 24 45z" />
-      <path fill="#1976D2" d="M45 24c0-1.3-.1-2.2-.4-3.5H24v8h11.3c-.6 3-2.2 5.3-4.7 6.9l6.2 5.1C41.7 37 45 31.2 45 24z" />
-    </svg>
-  );
-}
-function AppleIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#111827" d="M34.9 25.5c0-6.1 5-8.1 5.1-8.2-2.8-4.1-7.2-4.7-8.7-4.7-3.7-.4-7.2 2.2-9 2.2s-4.7-2.1-7.6-2c-3.9.1-7.5 2.3-9.5 5.8-4.1 7.1-1 17.5 2.9 23.3 1.9 2.7 4.1 5.8 7 5.7 2.8-.1 3.9-1.8 7.4-1.8s4.5 1.8 7.6 1.8c3.2 0 5.2-2.7 7.1-5.4 2.2-3.2 3.1-6.3 3.2-6.4-.1 0-6.1-2.3-6.1-9.3z" />
-      <path fill="#111827" d="M29.3 9.6c1.6-2 2.7-4.8 2.4-7.6-2.3.1-5 .9-6.6 2.9-1.4 1.6-2.7 4.5-2.4 7.1 2.6.2 5.1-1.3 6.6-2.4z" />
-    </svg>
-  );
-}
-function FacebookIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#1877F2" d="M24 3C12.4 3 3 12.4 3 24c0 10.4 7.7 19 17.7 20.7V29.6h-5.3V24h5.3v-4.3c0-5.2 3.1-8.1 7.8-8.1 2.3 0 4.7.4 4.7.4v5.2h-2.7c-2.6 0-3.4 1.6-3.4 3.3V24h5.8l-.9 5.6h-4.9v15.1C37.3 43 45 34.4 45 24 45 12.4 35.6 3 24 3z" />
-      <path fill="#fff" d="M33.4 29.6l.9-5.6h-5.8v-3.5c0-1.6.8-3.3 3.4-3.3h2.7v-5.2s-2.4-.4-4.7-.4c-4.7 0-7.8 2.9-7.8 8.1V24h-5.3v5.6h5.3v15.1c1.1.2 2.3.3 3.5.3s2.4-.1 3.5-.3V29.6h4.9z" />
+    <svg className={className} viewBox="0 0 533.5 544.3" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M533.5 278.4c0-18.4-1.5-36.8-4.7-54.8H272v103.9h147.5c-6.3 34.5-25.5 63.8-54.4 83.3v68h87.7c51.4-47.4 80.7-117.4 80.7-200.4z"
+      />
+      <path
+        fill="#34A853"
+        d="M272 544.3c73.6 0 135.4-24.4 180.5-66.1l-87.7-68c-24.4 16.4-55.7 26.2-92.8 26.2-71.2 0-131.5-48.1-153-112.9H28.1v70.8c45.3 89.7 137.3 150 243.9 150z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M119 323.5c-10.9-32.5-10.9-67.5 0-100l-90.9-70.8c-39.9 79.7-39.9 172 0 251.7l90.9-70.9z"
+      />
+      <path
+        fill="#EA4335"
+        d="M272 107.7c39.9 0 75.9 13.7 104.2 40.5l78-78C407.4 24.4 345.6 0 272 0 165.4 0 73.4 60.3 28.1 150.9l90.9 70.8c21.5-64.8 81.8-113.9 153-113.9z"
+      />
     </svg>
   );
 }
