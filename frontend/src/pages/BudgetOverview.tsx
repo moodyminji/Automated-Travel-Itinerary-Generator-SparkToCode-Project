@@ -200,7 +200,8 @@ export default function BudgetOverview() {
                     ? { background: "#ffffff", color: "#F5A623", border: "2px solid #F5A623" }
                     : { background: "#1D3557", color: "white" }
                 }
-                onClick={() => navigate(`/itinerary/${tripId}/edit`)}
+                onClick={() => navigate('/new-trip')}
+
               >
                 <FaEdit /> Adjust Budget
               </button>

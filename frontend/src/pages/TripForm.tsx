@@ -1,5 +1,5 @@
 // src/pages/TripForm.tsx
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Calendar as CalIcon, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useThemeMode } from "../hooks/useThemeMode";
@@ -20,42 +20,87 @@ const TEXT_DARK = "#DDE9F7";
 const SUBTEXT_DARK = "#B6C2D4";
 const ERROR_RED = "#EF4444";
 
-// lightweight client-side suggestions
-const DESTINATIONS = [
-  "Muscat, Oman",
-  "Salalah, Oman",
-  "Dubai, UAE",
-  "Abu Dhabi, UAE",
-  "Doha, Qatar",
-  "Riyadh, Saudi Arabia",
-  "Jeddah, Saudi Arabia",
-  "Manama, Bahrain",
-  "Kuwait City, Kuwait",
-  "Cairo, Egypt",
-  "Istanbul, Türkiye",
-  "Amman, Jordan",
-  "Beirut, Lebanon",
-  "Marrakesh, Morocco",
+/* --------------------------- Countries (50+) --------------------------- */
+const COUNTRIES: { name: string; flag: string }[] = [
+  { name: "United States", flag: "🇺🇸" },
+  { name: "United Kingdom", flag: "🇬🇧" },
+  { name: "Canada", flag: "🇨🇦" },
+  { name: "Australia", flag: "🇦🇺" },
+  { name: "New Zealand", flag: "🇳🇿" },
+  { name: "United Arab Emirates", flag: "🇦🇪" },
+  { name: "Saudi Arabia", flag: "🇸🇦" },
+  { name: "Qatar", flag: "🇶🇦" },
+  { name: "Bahrain", flag: "🇧🇭" },
+  { name: "Kuwait", flag: "🇰🇼" },
+  { name: "Oman", flag: "🇴🇲" },
+  { name: "Jordan", flag: "🇯🇴" },
+  { name: "Lebanon", flag: "🇱🇧" },
+  { name: "Egypt", flag: "🇪🇬" },
+  { name: "Morocco", flag: "🇲🇦" },
+  { name: "Tunisia", flag: "🇹🇳" },
+  { name: "Turkey", flag: "🇹🇷" },
+  { name: "Cyprus", flag: "🇨🇾" },
+  { name: "Greece", flag: "🇬🇷" },
+  { name: "Italy", flag: "🇮🇹" },
+  { name: "Spain", flag: "🇪🇸" },
+  { name: "France", flag: "🇫🇷" },
+  { name: "Germany", flag: "🇩🇪" },
+  { name: "Netherlands", flag: "🇳🇱" },
+  { name: "Belgium", flag: "🇧🇪" },
+  { name: "Switzerland", flag: "🇨🇭" },
+  { name: "Austria", flag: "🇦🇹" },
+  { name: "Czechia", flag: "🇨🇿" },
+  { name: "Hungary", flag: "🇭🇺" },
+  { name: "Poland", flag: "🇵🇱" },
+  { name: "Portugal", flag: "🇵🇹" },
+  { name: "Ireland", flag: "🇮🇪" },
+  { name: "Norway", flag: "🇳🇴" },
+  { name: "Sweden", flag: "🇸🇪" },
+  { name: "Denmark", flag: "🇩🇰" },
+  { name: "Finland", flag: "🇫🇮" },
+  { name: "Iceland", flag: "🇮🇸" },
+  { name: "Russia", flag: "🇷🇺" },
+  { name: "China", flag: "🇨🇳" },
+  { name: "Japan", flag: "🇯🇵" },
+  { name: "South Korea", flag: "🇰🇷" },
+  { name: "Singapore", flag: "🇸🇬" },
+  { name: "Malaysia", flag: "🇲🇾" },
+  { name: "Indonesia", flag: "🇮🇩" },
+  { name: "Thailand", flag: "🇹🇭" },
+  { name: "Vietnam", flag: "🇻🇳" },
+  { name: "Philippines", flag: "🇵🇭" },
+  { name: "India", flag: "🇮🇳" },
+  { name: "Sri Lanka", flag: "🇱🇰" },
+  { name: "Nepal", flag: "🇳🇵" },
+  { name: "South Africa", flag: "🇿🇦" },
+  { name: "Kenya", flag: "🇰🇪" },
+  { name: "Tanzania", flag: "🇹🇿" },
+  { name: "Brazil", flag: "🇧🇷" },
+  { name: "Argentina", flag: "🇦🇷" },
+  { name: "Chile", flag: "🇨🇱" },
+  { name: "Mexico", flag: "🇲🇽" },
+  { name: "Peru", flag: "🇵🇪" },
+  { name: "Colombia", flag: "🇨🇴" },
+  { name: "Dominican Republic", flag: "🇩🇴" },
+  { name: "Maldives", flag: "🇲🇻" },
 ];
 
 /* --------------------------- Date helpers --------------------------- */
 // normalize partial typing to dd-mm-yyyy (digits only -> add dashes)
 function normalizeDmy(input: string): string {
-  const digits = input.replace(/[^\d]/g, "").slice(0, 8); // ddmmyyyy (max 8)
+  const digits = input.replace(/[^\d]/g, "").slice(0, 8); // ddmmyyyy max 8
   const parts: string[] = [];
   if (digits.length >= 2) parts.push(digits.slice(0, 2));
   if (digits.length >= 4) parts.push(digits.slice(2, 4));
   if (digits.length > 4) parts.push(digits.slice(4));
   return parts.join("-").slice(0, 10);
 }
-
 function isValidDmy(dmy: string): boolean {
   if (!/^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$/.test(dmy)) return false;
   const [dd, mm, yyyy] = dmy.split("-").map(Number);
   const d = new Date(yyyy, mm - 1, dd);
   return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
 }
-
 function dmyToYmd(dmy: string): string | null {
   if (!isValidDmy(dmy)) return null;
   const [dd, mm, yyyy] = dmy.split("-");
@@ -101,24 +146,51 @@ const TripForm: React.FC = () => {
     travelStyle: "Comfort",
   });
 
-  const [destinationQuery, setDestinationQuery] = useState("");
-  const [openSuggestions, setOpenSuggestions] = useState(false);
+  // Country picker state
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [countryFilter, setCountryFilter] = useState("");
+  const countryBoxRef = useRef<HTMLDivElement | null>(null);
+
+  // Close country dropdown on outside click
+  useEffect(() => {
+    function onDown(e: MouseEvent) {
+      if (countryBoxRef.current && !countryBoxRef.current.contains(e.target as Node)) {
+        setCountryOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
+  // Suggestions search icon (used inside country search input)
+  const iconColor = mode === "dark" ? "#94A3B8" : "#9CA3AF";
+  const searchSvg = encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='${iconColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>`
+  );
+  const calSvg = encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='${iconColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2' ry='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>`
+  );
 
   // Derived validation
   const budgetError = tripData.budget <= 0;
   const dateOrderError = (() => {
     const s = dmyToDate(tripData.startDate);
     const e = dmyToDate(tripData.endDate);
-    if (!s || !e) return false; // only check order when both valid
+    if (!s || !e) return false;
     return e.getTime() < s.getTime();
   })();
+  const interestsError = tripData.interests.length === 0;
 
   const isFormValid =
     tripData.destination &&
     isValidDmy(tripData.startDate) &&
     isValidDmy(tripData.endDate) &&
     !budgetError &&
-    !dateOrderError;
+    !dateOrderError &&
+    !interestsError;
+
+  // Track submit attempt for error display
+  // Removed unused triedSubmit state
 
   // اهتمامات المستخدم
   const interests = [
@@ -141,22 +213,6 @@ const TripForm: React.FC = () => {
   };
 
   const isDark = mode === "dark";
-  const iconColor = isDark ? "#94A3B8" : "#9CA3AF";
-
-  // LEFT inline SVG icons (keeps your design)
-  const searchSvg = encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='${iconColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'/><line x1='21' y1='21' x2='16.65' y2='16.65'/></svg>`
-  );
-  const calSvg = encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='${iconColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='18' rx='2' ry='2'/><line x1='16' y1='2' x2='16' y2='6'/><line x1='8' y1='2' x2='8' y2='6'/><line x1='3' y1='10' x2='21' y2='10'/></svg>`
-  );
-
-  const suggestions =
-    destinationQuery.trim().length < 1
-      ? []
-      : DESTINATIONS.filter((d) =>
-          d.toLowerCase().includes(destinationQuery.toLowerCase())
-        ).slice(0, 8);
 
   // navigate
   const handleCancel = () => nav("/profile");
@@ -170,16 +226,13 @@ const TripForm: React.FC = () => {
   const retNativeRef = useRef<HTMLInputElement | null>(null);
 
   return (
-    // No page background here — we rely on Layout's background
     <div className="min-h-screen flex flex-col">
-      {/* Hide native Chrome controls on our visible inputs */}
       <style>{`
         .no-native::-webkit-calendar-picker-indicator { display: none; }
         .no-native::-webkit-inner-spin-button,
         .no-native::-webkit-clear-button { display: none; }
       `}</style>
 
-      {/* Content */}
       <main className="flex flex-1 items-center justify-center px-4 py-10">
         <div
           className="rounded-2xl shadow-xl p-8 w-full max-w-3xl"
@@ -195,84 +248,115 @@ const TripForm: React.FC = () => {
             Plan Your Trip
           </h1>
 
-          {/* Destination */}
-          <div className="mb-6">
+          {/* Destination (country picker) */}
+          <div className="mb-6" ref={countryBoxRef}>
             <label
-              htmlFor="destination"
+              htmlFor="country_button"
               className="block text-sm font-semibold mb-2"
               style={{ color: isDark ? TEXT_DARK : "#111827" }}
             >
               Where do you want to go?
             </label>
+
             <div className="relative">
-              <input
-                id="destination"
-                type="text"
-                value={destinationQuery}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setDestinationQuery(v);
-                  setTripData((prev) => ({ ...prev, destination: v }));
-                  setOpenSuggestions(true);
-                }}
-                onFocus={() => setOpenSuggestions(true)}
-                onBlur={() => setTimeout(() => setOpenSuggestions(false), 100)}
-                placeholder="e.g., Muscat, Oman"
-                className="w-full pr-12 py-3 border rounded-xl focus:ring-2 focus:outline-none"
+              <button
+                id="country_button"
+                type="button"
+                onClick={() => setCountryOpen((o) => !o)}
+                className="w-full flex items-center justify-between px-4 py-3 border rounded-xl"
                 style={{
                   backgroundColor: "#ffffff",
                   color: "#0f172a",
                   borderColor: "#d1d5db",
-                  boxShadow: "inset 0 0 0 1px transparent",
-                  backgroundImage: `url("data:image/svg+xml;utf8,${searchSvg}")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "12px 50%",
-                  backgroundSize: "20px 20px",
-                  paddingLeft: "48px",
                 }}
-              />
-              {destinationQuery && (
-                <button
-                  onClick={() => {
-                    setDestinationQuery("");
-                    setTripData((prev) => ({ ...prev, destination: "" }));
-                  }}
-                  aria-label="Clear destination"
-                  title="Clear destination"
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
-                  style={{ color: isDark ? SUBTEXT_DARK : "#9ca3af" }}
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
+              >
+                <span className="flex items-center gap-2">
+                  {tripData.destination ? (
+                    <>
+                      <span>
+                        {COUNTRIES.find((c) => c.name === tripData.destination)?.flag ?? "🌍"}
+                      </span>
+                      <span>{tripData.destination}</span>
+                    </>
+                  ) : (
+                    <span className="text-slate-500">Choose your country</span>
+                  )}
+                </span>
 
-              {/* Autocomplete dropdown */}
-              {openSuggestions && suggestions.length > 0 && (
-                <ul
-                  className="absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    borderColor: "#e5e7eb",
-                  }}
+                <span className="flex items-center gap-2">
+                  {tripData.destination && (
+                    <span
+                      title="Clear"
+                      aria-label="Clear country"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTripData((p) => ({ ...p, destination: "" }));
+                      }}
+                      className="rounded hover:bg-slate-100 px-1"
+                      style={{ color: isDark ? SUBTEXT_DARK : "#64748b" }}
+                    >
+                      <X className="w-4 h-4" />
+                    </span>
+                  )}
+                  <span style={{ color: isDark ? SUBTEXT_DARK : "#64748b" }}>▾</span>
+                </span>
+              </button>
+
+              {countryOpen && (
+                <div
+                  className="absolute z-20 mt-2 w-full rounded-xl border shadow"
+                  style={{ backgroundColor: "#ffffff", borderColor: "#e5e7eb" }}
                 >
-                  {suggestions.map((s) => (
-                    <li key={s}>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          setDestinationQuery(s);
-                          setTripData((prev) => ({ ...prev, destination: s }));
-                          setOpenSuggestions(false);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                        style={{ color: "#0f172a" }}
-                      >
-                        {s}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                  {/* Search */}
+                  <div className="p-3">
+                    <input
+                      type="text"
+                      value={countryFilter}
+                      onChange={(e) => setCountryFilter(e.target.value)}
+                      placeholder="Find your country..."
+                      className="w-full px-3 py-2 border rounded-lg"
+                      style={{
+                        backgroundColor: "#ffffff",
+                        color: "#0f172a",
+                        borderColor: "#e5e7eb",
+                        backgroundImage: `url("data:image/svg+xml;utf8,${searchSvg}")`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "10px 50%",
+                        backgroundSize: "18px 18px",
+                        paddingLeft: "36px",
+                      }}
+                    />
+                  </div>
+
+                  {/* List */}
+                  <ul className="max-h-72 overflow-auto">
+                    {COUNTRIES.filter((c) =>
+                      c.name.toLowerCase().includes(countryFilter.toLowerCase())
+                    ).map((c) => {
+                      const selected = c.name === tripData.destination;
+                      return (
+                        <li key={c.name}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              setTripData((p) => ({ ...p, destination: c.name }));
+                              setCountryOpen(false);
+                            }}
+                            className="w-full flex items-center justify-between px-4 py-2 hover:bg-gray-100"
+                            style={{ color: "#0f172a" }}
+                          >
+                            <span className="flex items-center gap-3">
+                              <span className="text-lg">{c.flag}</span>
+                              <span>{c.name}</span>
+                            </span>
+                            {selected && <span>✓</span>}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               )}
             </div>
           </div>
@@ -495,6 +579,12 @@ const TripForm: React.FC = () => {
                 </label>
               ))}
             </div>
+          {interestsError && (
+  <p className="mt-1 text-sm" style={{ color: ERROR_RED }}>
+    Please select at least one interest.
+  </p>
+)}
+
           </div>
 
           {/* Travelers */}
