@@ -1,22 +1,24 @@
 // src/pages/TripForm.tsx
 import React, { useRef, useState } from "react";
-import { Calendar as CalIcon, DollarSign, Users, X } from "lucide-react";
+import { Calendar as CalIcon, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useThemeMode } from "../hooks/useThemeMode";
 
 interface TripData {
   destination: string;
-  startDate: string;
-  endDate: string;
+  startDate: string; // dd-mm-yyyy
+  endDate: string;   // dd-mm-yyyy
   budget: number;
   travelers: number;
   interests: string[];
+  travelStyle: "Luxury" | "Budget" | "Comfort";
 }
 
 const ACCENT = "#F4A83F";
 const CARD_DARK = "#122033";
 const TEXT_DARK = "#DDE9F7";
 const SUBTEXT_DARK = "#B6C2D4";
+const ERROR_RED = "#EF4444";
 
 // lightweight client-side suggestions
 const DESTINATIONS = [
@@ -36,6 +38,55 @@ const DESTINATIONS = [
   "Marrakesh, Morocco",
 ];
 
+/* --------------------------- Date helpers --------------------------- */
+// normalize partial typing to dd-mm-yyyy (digits only -> add dashes)
+function normalizeDmy(input: string): string {
+  const digits = input.replace(/[^\d]/g, "").slice(0, 8); // ddmmyyyy (max 8)
+  const parts: string[] = [];
+  if (digits.length >= 2) parts.push(digits.slice(0, 2));
+  if (digits.length >= 4) parts.push(digits.slice(2, 4));
+  if (digits.length > 4) parts.push(digits.slice(4));
+  return parts.join("-").slice(0, 10);
+}
+
+function isValidDmy(dmy: string): boolean {
+  if (!/^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-\d{4}$/.test(dmy)) return false;
+  const [dd, mm, yyyy] = dmy.split("-").map(Number);
+  const d = new Date(yyyy, mm - 1, dd);
+  return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
+}
+
+function dmyToYmd(dmy: string): string | null {
+  if (!isValidDmy(dmy)) return null;
+  const [dd, mm, yyyy] = dmy.split("-");
+  return `${yyyy}-${mm}-${dd}`;
+}
+function ymdToDmy(ymd: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+  const [yyyy, mm, dd] = ymd.split("-");
+  return `${dd}-${mm}-${yyyy}`;
+}
+function dmyToDate(dmy: string): Date | null {
+  if (!isValidDmy(dmy)) return null;
+  const [dd, mm, yyyy] = dmy.split("-").map(Number);
+  return new Date(yyyy, mm - 1, dd);
+}
+
+/** Safely open the native date picker for a hidden <input type="date"> */
+type HTMLDateInput = HTMLInputElement & { showPicker?: () => void };
+function openNativePicker(
+  ref: React.RefObject<HTMLInputElement | null>,
+  currentDmy: string
+) {
+  const el = ref.current as HTMLDateInput | null;
+  if (!el) return;
+  const pre = dmyToYmd(currentDmy);
+  if (pre) el.value = pre;
+  if (typeof el.showPicker === "function") el.showPicker();
+  else el.click();
+}
+
+/* --------------------------- Component --------------------------- */
 const TripForm: React.FC = () => {
   const { mode } = useThemeMode();
   const nav = useNavigate();
@@ -47,13 +98,27 @@ const TripForm: React.FC = () => {
     budget: 2000,
     travelers: 2,
     interests: [],
+    travelStyle: "Comfort",
   });
 
   const [destinationQuery, setDestinationQuery] = useState("");
   const [openSuggestions, setOpenSuggestions] = useState(false);
 
+  // Derived validation
+  const budgetError = tripData.budget <= 0;
+  const dateOrderError = (() => {
+    const s = dmyToDate(tripData.startDate);
+    const e = dmyToDate(tripData.endDate);
+    if (!s || !e) return false; // only check order when both valid
+    return e.getTime() < s.getTime();
+  })();
+
   const isFormValid =
-    tripData.destination && tripData.startDate && tripData.endDate;
+    tripData.destination &&
+    isValidDmy(tripData.startDate) &&
+    isValidDmy(tripData.endDate) &&
+    !budgetError &&
+    !dateOrderError;
 
   // اهتمامات المستخدم
   const interests = [
@@ -100,14 +165,14 @@ const TripForm: React.FC = () => {
     nav("/itinerary/1", { state: { tripData } });
   };
 
-  // refs for programmatic date-picker open
-  const depRef = useRef<HTMLInputElement>(null);
-  const retRef = useRef<HTMLInputElement>(null);
+  // refs for hidden native date inputs
+  const depNativeRef = useRef<HTMLInputElement | null>(null);
+  const retNativeRef = useRef<HTMLInputElement | null>(null);
 
   return (
     // No page background here — we rely on Layout's background
     <div className="min-h-screen flex flex-col">
-      {/* Hide native picker icon; we provide our own right-side button */}
+      {/* Hide native Chrome controls on our visible inputs */}
       <style>{`
         .no-native::-webkit-calendar-picker-indicator { display: none; }
         .no-native::-webkit-inner-spin-button,
@@ -213,52 +278,55 @@ const TripForm: React.FC = () => {
           </div>
 
           {/* Dates */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
             <div>
               <label
-                htmlFor="departure"
+                htmlFor="departure_text"
                 className="block text-sm font-semibold mb-2"
                 style={{ color: isDark ? TEXT_DARK : "#111827" }}
               >
                 Departure Date
               </label>
               <div className="relative">
+                {/* Visible text input (dd-mm-yyyy) */}
                 <input
-                  ref={depRef}
-                  id="departure"
-                  type="date"
+                  id="departure_text"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="dd-mm-yyyy"
                   value={tripData.startDate}
                   onChange={(e) =>
-                    setTripData((prev) => ({
-                      ...prev,
-                      startDate: e.target.value,
-                    }))
+                    setTripData((p) => ({ ...p, startDate: normalizeDmy(e.target.value) }))
                   }
-                  className="tf-date no-native w-full py-3 border rounded-xl focus:ring-2 focus:outline-none"
+                  className="no-native w-full py-3 border rounded-xl focus:ring-2 focus:outline-none"
                   style={{
                     backgroundColor: "#ffffff",
                     color: "#0f172a",
                     borderColor: "#d1d5db",
-                    // LEFT calendar icon (matches your design)
                     backgroundImage: `url("data:image/svg+xml;utf8,${calSvg}")`,
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "12px 50%",
                     backgroundSize: "20px 20px",
                     paddingLeft: "48px",
-                    // room for our right-side button
                     paddingRight: "44px",
                   }}
+                  aria-invalid={!isValidDmy(tripData.startDate)}
                 />
-                {/* Our right-side calendar button (works in dark mode) */}
+                {/* Hidden native input to open the calendar */}
+                <input
+                  ref={depNativeRef}
+                  type="date"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const dmy = ymdToDmy(e.target.value) ?? "";
+                    setTripData((p) => ({ ...p, startDate: dmy }));
+                  }}
+                />
                 <button
                   type="button"
                   aria-label="Open date picker"
                   title="Open date picker"
-                  onClick={() => {
-                    const el = depRef.current;
-                    if (el?.showPicker) el.showPicker();
-                    else el?.focus();
-                  }}
+                  onClick={() => openNativePicker(depNativeRef, tripData.startDate)}
                   className="absolute right-3 top-1/2 -translate-y-1/2"
                   style={{ color: isDark ? SUBTEXT_DARK : "#0f172a" }}
                 >
@@ -266,9 +334,10 @@ const TripForm: React.FC = () => {
                 </button>
               </div>
             </div>
+
             <div>
               <label
-                htmlFor="return"
+                htmlFor="return_text"
                 className="block text-sm font-semibold mb-2"
                 style={{ color: isDark ? TEXT_DARK : "#111827" }}
               >
@@ -276,21 +345,19 @@ const TripForm: React.FC = () => {
               </label>
               <div className="relative">
                 <input
-                  ref={retRef}
-                  id="return"
-                  type="date"
+                  id="return_text"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="dd-mm-yyyy"
                   value={tripData.endDate}
                   onChange={(e) =>
-                    setTripData((prev) => ({
-                      ...prev,
-                      endDate: e.target.value,
-                    }))
+                    setTripData((p) => ({ ...p, endDate: normalizeDmy(e.target.value) }))
                   }
-                  className="tf-date no-native w-full py-3 border rounded-xl focus:ring-2 focus:outline-none"
+                  className="no-native w-full py-3 border rounded-xl focus:ring-2 focus:outline-none"
                   style={{
                     backgroundColor: "#ffffff",
                     color: "#0f172a",
-                    borderColor: "#d1d5db",
+                    borderColor: dateOrderError ? ERROR_RED : "#d1d5db",
                     backgroundImage: `url("data:image/svg+xml;utf8,${calSvg}")`,
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "12px 50%",
@@ -298,27 +365,38 @@ const TripForm: React.FC = () => {
                     paddingLeft: "48px",
                     paddingRight: "44px",
                   }}
+                  aria-invalid={dateOrderError || !isValidDmy(tripData.endDate)}
+                />
+                <input
+                  ref={retNativeRef}
+                  type="date"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const dmy = ymdToDmy(e.target.value) ?? "";
+                    setTripData((p) => ({ ...p, endDate: dmy }));
+                  }}
                 />
                 <button
                   type="button"
                   aria-label="Open date picker"
                   title="Open date picker"
-                  onClick={() => {
-                    const el = retRef.current;
-                    if (el?.showPicker) el.showPicker();
-                    else el?.focus();
-                  }}
+                  onClick={() => openNativePicker(retNativeRef, tripData.endDate)}
                   className="absolute right-3 top-1/2 -translate-y-1/2"
                   style={{ color: isDark ? SUBTEXT_DARK : "#0f172a" }}
                 >
                   <CalIcon size={18} />
                 </button>
               </div>
+              {dateOrderError && (
+                <p className="mt-1 text-sm" style={{ color: ERROR_RED }}>
+                  Return date cannot be before departure date.
+                </p>
+              )}
             </div>
           </div>
 
           {/* Budget */}
-          <div className="mb-6">
+          <div className="mb-6 mt-4">
             <label
               htmlFor="budget"
               className="block text-sm font-semibold mb-2"
@@ -327,7 +405,15 @@ const TripForm: React.FC = () => {
               Budget (OMR)
             </label>
             <div className="flex items-center gap-3">
-              <DollarSign style={{ color: "#16a34a" }} />
+              <span
+                className="px-2 py-1 rounded-md text-xs font-semibold"
+                style={{
+                  backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "#F3F4F6",
+                  color: isDark ? TEXT_DARK : "#111827",
+                }}
+              >
+                OMR
+              </span>
               <input
                 id="budget"
                 type="number"
@@ -335,16 +421,52 @@ const TripForm: React.FC = () => {
                 onChange={(e) =>
                   setTripData((prev) => ({
                     ...prev,
-                    budget: parseInt(e.target.value) || 0,
+                    budget: parseInt(e.target.value || "0", 10),
                   }))
                 }
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:outline-none"
                 style={{
                   backgroundColor: "#ffffff",
                   color: "#0f172a",
-                  borderColor: "#d1d5db",
+                  borderColor: budgetError ? ERROR_RED : "#d1d5db",
                 }}
+                aria-invalid={budgetError}
               />
+            </div>
+            {budgetError && (
+              <p className="mt-1 text-sm" style={{ color: ERROR_RED }}>
+                Budget must be greater than 0 OMR.
+              </p>
+            )}
+          </div>
+
+          {/* Travel Style */}
+          <div className="mb-8">
+            <label
+              className="block text-sm font-semibold mb-3"
+              style={{ color: isDark ? TEXT_DARK : "#111827" }}
+            >
+              Travel style
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {(["Luxury", "Budget", "Comfort"] as TripData["travelStyle"][]).map((opt) => {
+                const active = tripData.travelStyle === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setTripData((p) => ({ ...p, travelStyle: opt }))}
+                    className="px-4 py-2 rounded-xl border font-semibold transition"
+                    style={{
+                      borderColor: active ? ACCENT : isDark ? "rgba(255,255,255,0.18)" : "#e5e7eb",
+                      color: active ? ACCENT : isDark ? TEXT_DARK : "#111827",
+                      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#fff",
+                    }}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

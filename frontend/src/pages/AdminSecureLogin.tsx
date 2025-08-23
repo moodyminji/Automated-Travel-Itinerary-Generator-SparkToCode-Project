@@ -15,7 +15,7 @@ export default function AdminSecureLogin() {
   const { mode } = useThemeMode();
   const isDark = mode === 'dark';
   const CARD_DARK = '#122033';
-  const TEXT_DARK = '#DDE9F7';
+  const TEXT_DARK = '#FFFFFF';
   const SUBTEXT_DARK = '#B6C2D4';
 
   const submit = (e: React.FormEvent) => {
@@ -35,7 +35,7 @@ export default function AdminSecureLogin() {
     <div className="relative min-h-screen overflow-hidden">
       <main className="relative z-10 flex items-start md:items-center justify-center px-4 pt-24 pb-16 md:pt-28">
         <section
-          className="w-full max-w-xl rounded-2xl shadow-xl border px-8 md:px-12 py-10"
+          className="w-full max-w-xl shadow-xl border px-8 md:px-12 py-10"
           style={{
             backgroundColor: isDark ? CARD_DARK : '#ffffff',
             borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB',
@@ -82,7 +82,11 @@ export default function AdminSecureLogin() {
 
             <button
               type="submit"
-              className="mx-auto block w-56 rounded-xl border-2 border-[#F4A83F] text-[#F4A83F] font-semibold py-3 hover:bg-orange-50 transition"
+              className="mx-auto block w-40 border-2 font-bold py-3 hover:bg-orange-50 transition" style={{
+                borderColor: "#F5A623",       // stroke
+                color: "#F5A623",             // text
+                backgroundColor: "#ffffff",   // fill white (both modes)
+              }}
             >
               Log in
             </button>

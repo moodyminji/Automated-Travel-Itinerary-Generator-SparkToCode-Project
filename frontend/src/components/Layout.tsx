@@ -11,6 +11,7 @@ import {
   AccountBalanceWallet,
   AccountCircle,
   LogoutOutlined,
+  VerifiedUser, // <-- added
 } from '@mui/icons-material';
 
 import Logo from '../assets/logo.png';
@@ -37,8 +38,8 @@ function NavItem({
         ? '#F5A623'
         : '#1D3557'
       : isActive
-      ? '#DDE9F7'
-      : '#F5A623';
+        ? '#DDE9F7'
+        : '#F5A623';
 
   return to ? (
     <NavLink
@@ -69,12 +70,14 @@ export default function Layout({ children }: PropsWithChildren) {
   const isLoginLike =
     pathname === '/login' ||
     pathname === '/auth' ||
-    pathname === '/admin' ||
     pathname.startsWith('/admin/login') ||
-    pathname === '/signup'; // <-- added
+    pathname === '/signup'; // <-- unchanged except removing '/admin'
 
-  // Hide header ONLY on landing page
-  const hideChrome = pathname === '/';
+  // Admin dashboard/header should be slim: logo + logout + theme toggle
+  const isAdminSlim = pathname.startsWith('/admin') && !pathname.startsWith('/admin/login');
+
+  // Hide header on landing page AND on 404 page
+  const hideChrome = pathname === '/' || pathname === '/404';
 
   const logoutColor = mode === 'light' ? '#1D3557' : '#F5A623';
   const themeColor = mode === 'light' ? '#1D3557' : '#F5A623';
@@ -89,15 +92,23 @@ export default function Layout({ children }: PropsWithChildren) {
 
   return (
     <div
-      className={`relative min-h-screen flex flex-col ${
-        mode === 'light' ? 'bg-[#FAF3E7]' : 'bg-gray-900'
-      }`}
+      className={`relative min-h-screen flex flex-col ${mode === 'light' ? 'bg-[#FAF3E7]' : 'bg-gray-900'
+        }`}
     >
       {/* Header (hidden on /; slim on login-like) */}
       {!hideChrome && (
-        <header className="sticky top-0 z-50">
+        <header
+          className="relative z-[60] w-full"   // <- not fixed anymore
+          style={{
+            backgroundColor:
+              mode === 'light'
+                ? 'rgba(250,243,231,0.92)'
+                : 'rgba(17,24,39,0.92)',
+            backdropFilter: 'saturate(180%) blur(8px)',
+          }}
+        >
           <div className="w-full px-4 py-3 flex items-center justify-between">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex items-center gap-2">
               <Link to="/">
                 <img
                   src={Logo}
@@ -105,11 +116,25 @@ export default function Layout({ children }: PropsWithChildren) {
                   style={{ width: 90, height: 90, objectFit: 'contain' }}
                 />
               </Link>
+
+              {/* For admins only pill beside logo on admin routes */}
+              {isAdminSlim && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor: mode === 'dark' ? 'rgba(255,255,255,0.12)' : '#0F2742',
+                    color: '#FFFFFF',
+                  }}
+                >
+                  <VerifiedUser style={{ fontSize: 14 }} />
+                  For admins only
+                </span>
+              )}
             </div>
 
             <div className="flex-1 flex items-center justify-end gap-2 md:gap-4">
-              {/* Full nav normally; only theme toggle on login-like */}
-              {!isLoginLike ? (
+              {/* Full nav normally; hidden on login-like and admin-slim */}
+              {!isLoginLike && !isAdminSlim ? (
                 <>
                   <nav className="hidden md:flex items-center gap-2">
                     <NavItem to="/itinerary/1" icon={<Home />}>My Trips</NavItem>
@@ -150,6 +175,18 @@ export default function Layout({ children }: PropsWithChildren) {
                 </>
               ) : null}
 
+              {/* Admin slim: only Logout (plus theme toggle below) */}
+              {isAdminSlim && user && (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-surface/70"
+                  style={{ color: logoutColor }}
+                  type="button"
+                >
+                  <LogoutOutlined /> Logout
+                </button>
+              )}
+
               {/* Theme toggle (always shown) */}
               <button
                 onClick={toggleMode}
@@ -168,7 +205,7 @@ export default function Layout({ children }: PropsWithChildren) {
 
       {/* Content */}
       <main className="flex-1 relative z-10">
-        <div className={hideChrome ? '' : 'w-full px-4 py-8'}>{children}</div>
+        <div className={hideChrome ? '' : 'w-full px-4 py-8'}>{children}</div> {/* <- removed pt-[100px] */}
       </main>
 
       {/* Bottom waves (visible on all except landing) */}
@@ -185,5 +222,3 @@ export default function Layout({ children }: PropsWithChildren) {
     </div>
   );
 }
-
-

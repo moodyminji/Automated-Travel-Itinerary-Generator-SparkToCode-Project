@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import type { Theme } from "@mui/material";
+import NotFoundImage from "../assets/404.png";
 
 export default function NotFound() {
   const theme: Theme = useTheme();
@@ -33,6 +34,14 @@ export default function NotFound() {
           We couldn’t find the page you’re looking for. It might have been moved,
           deleted, or typed incorrectly.
         </p>
+
+        <div className="mx-auto w-60 h-60 mt-6">
+          <img
+            src={NotFoundImage}
+            alt="404 illustration"
+            className="w-full h-full object-contain"
+          />
+        </div>
 
         <div className="flex gap-4 justify-center mt-8">
           <Link
