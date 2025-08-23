@@ -6,7 +6,10 @@ import com.AutomatedTravelApp.travel.dto.GenerateItineraryResponse;
 import com.AutomatedTravelApp.travel.service.ItineraryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -16,12 +19,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ActiveProfiles("test")
 @WebMvcTest(ItineraryController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class ItineraryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-    
+
+    @MockitoBean
     private ItineraryService itineraryService;
 
     @Test
@@ -37,14 +43,17 @@ class ItineraryControllerTest {
                 .thenReturn(new GenerateItineraryResponse(123L, "Itinerary created"));
 
         String body = """
-            {
-              "destination": "DXB",
-              "days": 3,
-              "startDate": "10-09-2025",
-              "endDate":   "12-09-2025",
-              "interests": ["shopping","food"]
-            }
-            """;
+                {
+                  "destination": "Muscat",
+                  "days": 3,
+                  "startDate": "01-09-2025",
+                  "endDate": "03-09-2025",
+                  "travelStyle": "COMFORT",
+                  "budgetBreakdown": {"hotel":400,"flight":200},
+                  "peopleCount": 2,
+                  "interests": ["BEACH","HISTORY"]
+                }
+                """;
 
         mockMvc.perform(post("/api/itineraries/generate")
                         .contentType(MediaType.APPLICATION_JSON)

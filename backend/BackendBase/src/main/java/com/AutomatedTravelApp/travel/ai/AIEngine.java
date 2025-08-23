@@ -1,12 +1,15 @@
 package com.AutomatedTravelApp.travel.ai;
 
-import com.AutomatedTravelApp.travel.model.Trip;
-import com.AutomatedTravelApp.travel.model.Activity;
 import com.AutomatedTravelApp.travel.dto.GenerateItineraryResponse;
+import com.AutomatedTravelApp.travel.model.Activity;
+import com.AutomatedTravelApp.travel.model.TravelStyle;
+import com.AutomatedTravelApp.travel.model.Trip;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 public class AIEngine {
 
@@ -14,19 +17,21 @@ public class AIEngine {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-    public String finalJson; // stores the last generated JSON from Gemini and can be accessed from other files
+    /** Stores the last generated JSON from Gemini and can be accessed from other files */
+    public String finalJson;
 
     public AIEngine() {
         this.client = new Client();
     }
 
     public String generateItineraryJson(Trip trip, GenerateItineraryResponse responseData) throws Exception {
-
         String destination = trip.getDestination();
         String startDate = trip.getStartDate().format(DATE_FORMAT);
         String endDate = trip.getEndDate().format(DATE_FORMAT);
         double budget = trip.getBudgetAmount().doubleValue();
-        String preferences = trip.getUser().getPreferences();
+        String preferences = Optional.ofNullable(trip.getUser())
+                .map(u -> u.getPreferences())
+                .orElse("");
 
         String currency = trip.getDays().stream()
                 .flatMap(day -> day.getActivities().stream())
@@ -35,29 +40,31 @@ public class AIEngine {
                 .orElse(trip.getBudgetCurrency());
 
         // Generate a unique itinerary ID if none exists
-        String itineraryId = responseData.getItineraryId() != null ?
-                responseData.getItineraryId().toString() :
-                "ITIN-" + System.currentTimeMillis();
+        String itineraryId = responseData.getItineraryId() != null
+                ? responseData.getItineraryId().toString()
+                : "ITIN-" + System.currentTimeMillis();
 
-        String travelStyle = responseData.getTravelStyle() != null ? responseData.getTravelStyle() : "Balanced";
+        // Travel style now comes as an enum; default to COMFORT if null
+        TravelStyle travelStyle = responseData.getTravelStyle() != null
+                ? responseData.getTravelStyle()
+                : TravelStyle.COMFORT;
 
-        String pacingRules; // Pacing rules for travel style
-        switch (travelStyle.toLowerCase()) {
-            case "luxury":
+        // Pacing rules per style
+        String pacingRules;
+        switch (travelStyle) {
+            case LUXURY:
                 pacingRules = "Max 2 activities/day, rest every 2-3 days, total activity duration 4-5 hrs, more budget on hotel & food";
                 break;
-            case "budget":
+            case BUDGET:
                 pacingRules = "Max 3 activities/day, rest every 4-5 days, total activity duration 6-7 hrs, balanced budget";
                 break;
-            case "adventure":
-                pacingRules = "4+ activities/day, rest optional, total activity duration 8-10 hrs, more budget on activities";
-                break;
-            case "family":
-                pacingRules = "2-3 activities/day, rest every 3 days, total activity duration 5-6 hrs, balanced budget with focus on comfort & convenience";
-                break;
+            case COMFORT:
             default:
-                pacingRules = "Balanced pacing rules";
+                pacingRules = "Balanced plan, 2-3 activities/day, total activity duration 5 hrs";
         }
+
+        // Pretty string for the prompt (e.g., "Luxury", "Comfort")
+        String travelStyleDisplay = capitalize(travelStyle.name().toLowerCase());
 
         String prompt = """
                 You are a travel planning AI. Generate a complete travel itinerary for a user based on the following information:
@@ -111,7 +118,17 @@ public class AIEngine {
                 Preferences: %s
                 Travel Style: %s
                 Pacing Rules: %s
-                """.formatted(itineraryId, currency, destination, startDate, endDate, budget, preferences, travelStyle, pacingRules);
+                """.formatted(
+                itineraryId,
+                currency,
+                destination,
+                startDate,
+                endDate,
+                budget,
+                preferences,
+                travelStyleDisplay,
+                pacingRules
+        );
 
         // Call Gemini AI to generate content
         GenerateContentResponse response = client.models.generateContent(
@@ -123,12 +140,13 @@ public class AIEngine {
         String rawText = response.text();
         finalJson = cleanJson(rawText); // store in class-level variable so it can be accessed externally
 
-        objectMapper.readTree(finalJson); // validate that the JSON is parsable
+        // Validate JSON
+        objectMapper.readTree(finalJson);
 
-        return finalJson; // final output
+        return finalJson;
     }
 
-    private static String cleanJson(String raw) { // clean raw AI output into valid JSON
+    private static String cleanJson(String raw) {
         if (raw == null) return "{}";
         String cleaned = raw.trim();
         if (cleaned.startsWith("```")) {
@@ -139,31 +157,9 @@ public class AIEngine {
         }
         return cleaned;
     }
+
+    private static String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
 }
-
-/*
-========================
-HOW TO USE finalJson IN ANOTHER FILE
-========================
-
-Step 1: Import AIEngine
-    import com.AutomatedTravelApp.travel.ai.AIEngine;
-
-Step 2: Create an instance of AIEngine
-    AIEngine engine = new AIEngine();
-
-Step 3: Prepare your Trip and GenerateItineraryResponse objects
-    Trip trip = ...; // your trip object
-    GenerateItineraryResponse responseData = ...; // your response object
-
-Step 4: Call the generateItineraryJson() method to populate finalJson
-    engine.generateItineraryJson(trip, responseData);
-
-Step 5: Access the finalJson variable directly
-    System.out.println(engine.finalJson);
-
-Notes:
-- You must call generateItineraryJson() first; otherwise finalJson will be null.
-- finalJson contains the complete JSON output generated by Gemini AI.
-- You can now use engine.finalJson anywhere in your project without additional getters.
-*/

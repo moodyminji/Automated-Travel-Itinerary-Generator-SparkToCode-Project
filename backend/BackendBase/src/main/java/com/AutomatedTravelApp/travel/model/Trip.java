@@ -48,11 +48,9 @@ public class Trip extends BaseEntity {
     @Column(length = 3, nullable = false)
     @Builder.Default
     private String budgetCurrency = "OMR";
-    
-       /** "luxury" | "comfort" | "budget" */
-    @Column(length = 20)
-    @Builder.Default
-    private String travelStyle = "comfort";
+
+    @Enumerated(EnumType.STRING)
+    private TravelStyle travelStyle;
     
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dayNumber ASC")

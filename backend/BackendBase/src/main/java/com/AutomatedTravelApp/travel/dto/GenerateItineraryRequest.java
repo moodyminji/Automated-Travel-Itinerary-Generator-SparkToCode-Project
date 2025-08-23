@@ -1,6 +1,7 @@
 package com.AutomatedTravelApp.travel.dto;
 
 import com.AutomatedTravelApp.travel.model.TravelInterest;
+import com.AutomatedTravelApp.travel.model.TravelStyle;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -32,7 +33,8 @@ public class GenerateItineraryRequest {
 
     private Integer budget;
 
-    private String travelStyle;
+    @NotNull(message = "travelStyle is required")
+    private TravelStyle travelStyle;
 
     private Map<String, Double> budgetBreakdown;
 

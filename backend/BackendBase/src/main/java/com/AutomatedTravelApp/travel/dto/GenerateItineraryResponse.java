@@ -1,6 +1,7 @@
 package com.AutomatedTravelApp.travel.dto;
 
 import com.AutomatedTravelApp.travel.model.TravelInterest;
+import com.AutomatedTravelApp.travel.model.TravelStyle;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,7 +25,7 @@ public class GenerateItineraryResponse {
     private LocalDate endDate;
     private Double totalBudget;
     private Double estimatedCost;
-    private String travelStyle;
+    private TravelStyle travelStyle;
     private Map<String, Double> budgetBreakdown;
     private Set<TravelInterest> interests;
     private Integer peopleCount;
