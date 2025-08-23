@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jakarta.validation.constraints.NotNull;

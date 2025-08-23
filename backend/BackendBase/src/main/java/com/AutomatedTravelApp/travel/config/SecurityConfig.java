@@ -18,8 +18,10 @@ public class SecurityConfig {
                     "/health",
                     "/api/itineraries/health",
                     "/api/itineraries/generate",   // keep public for now
-                    "/api/itineraries/**"          // or restrict later
+                    "/api/itineraries/**",
+                    "/api/auth/**"        // or restrict later
                 ).permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .oauth2Login(Customizer.withDefaults())   // <-- enables Google login
