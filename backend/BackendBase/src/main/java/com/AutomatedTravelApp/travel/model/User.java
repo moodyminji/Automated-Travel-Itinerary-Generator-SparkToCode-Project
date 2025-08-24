@@ -19,10 +19,6 @@ public class User extends BaseEntity {
     @Email @NotBlank
     @Column(nullable = false, unique = true, length = 160)
     private String email;
-    
-    @Builder.Default
-    private boolean emailVerified = false;
-    private String verificationToken;
 
     @NotBlank
     @Column(nullable = false, length = 255)

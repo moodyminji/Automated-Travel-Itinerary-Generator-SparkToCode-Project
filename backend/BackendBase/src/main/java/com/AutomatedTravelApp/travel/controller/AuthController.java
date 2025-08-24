@@ -22,18 +22,9 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
         userService.registerUser(user);
-        return ResponseEntity.ok("Registration successful! Please check your email to verify your account.");
+        return ResponseEntity.ok("Registration successful!");
     }
 
-    @GetMapping("/verify")
-    public ResponseEntity<String> verify(@RequestParam String token) {
-        boolean verified = userService.verifyUser(token);
-        if (verified) {
-            return ResponseEntity.ok("Email verified successfully!");
-        } else {
-            return ResponseEntity.badRequest().body("Invalid or expired verification token.");
-        }
-    }
     @GetMapping("/me")
     public Map<String, Object> me(@AuthenticationPrincipal OAuth2User user) {
         return user == null ? Map.of("authenticated", false) : user.getAttributes();
