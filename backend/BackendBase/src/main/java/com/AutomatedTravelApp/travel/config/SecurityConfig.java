@@ -2,7 +2,6 @@ package com.AutomatedTravelApp.travel.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -12,21 +11,20 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Your API is mostly public right now; lock down later if needed
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/health",
-                    "/api/itineraries/health",
-                    "/api/itineraries/generate",   // keep public for now
-                    "/api/itineraries/**",
-                    "/api/auth/**"        // or restrict later
-                ).permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .oauth2Login(Customizer.withDefaults())   // <-- enables Google login
-            .logout(logout -> logout.logoutSuccessUrl("/").permitAll())
-            .csrf(csrf -> csrf.disable());            // typical for JSON APIs
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/health",
+                                "/api/itineraries/health",
+                                "/api/itineraries/generate",   // public for now
+                                "/api/itineraries/**",
+                                "/api/auth/**"                 // your own login/register
+                        ).permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
+                // removed .oauth2Login() → no Google login
+                .logout(logout -> logout.logoutSuccessUrl("/").permitAll())
+                .csrf(csrf -> csrf.disable()); // typical for JSON APIs
 
         return http.build();
     }
