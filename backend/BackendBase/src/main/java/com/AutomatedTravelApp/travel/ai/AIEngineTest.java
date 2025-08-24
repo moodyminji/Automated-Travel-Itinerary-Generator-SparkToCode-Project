@@ -1,9 +1,6 @@
 package com.AutomatedTravelApp.travel.ai;
 
-import com.AutomatedTravelApp.travel.model.Trip;
-import com.AutomatedTravelApp.travel.model.Activity;
-import com.AutomatedTravelApp.travel.model.ItineraryDay;
-import com.AutomatedTravelApp.travel.model.User;
+import com.AutomatedTravelApp.travel.model.*;
 import com.AutomatedTravelApp.travel.dto.GenerateItineraryResponse;
 
 import java.math.BigDecimal;
@@ -45,7 +42,7 @@ public class AIEngineTest {
 
         // Dummy responseData
         GenerateItineraryResponse responseData = new GenerateItineraryResponse();
-        responseData.setTravelStyle("adventure");
+        responseData.setTravelStyle(TravelStyle.BUDGET);
 
         // Run AIEngine
         AIEngine engine = new AIEngine();
