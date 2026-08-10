@@ -9,11 +9,18 @@ services:
       - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travel -d travel"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build: ./backend/BackendBase
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: on-failure
     environment:
       DB_URL: jdbc:postgresql://db:5432/travel
       DB_USER: travel
@@ -21,11 +28,16 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
       DDL_AUTO: update
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-ChangeMe!123}
     ports:
       - "8080:8080"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
     depends_on:
       - backend
     ports:

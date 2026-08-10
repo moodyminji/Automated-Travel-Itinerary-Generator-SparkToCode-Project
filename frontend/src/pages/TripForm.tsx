@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Calendar as CalIcon, Users, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useThemeMode } from "../hooks/useThemeMode";
+import { generateItinerary } from "../services/api";
+import type { TripRequest } from "../types";
 
 interface TripData {
   destination: string;
@@ -150,7 +152,8 @@ const TripForm: React.FC = () => {
   const [countryOpen, setCountryOpen] = useState(false);
   const [countryFilter, setCountryFilter] = useState("");
   const countryBoxRef = useRef<HTMLDivElement | null>(null);
-
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>("");
   // Close country dropdown on outside click
   useEffect(() => {
     function onDown(e: MouseEvent) {
@@ -216,9 +219,35 @@ const TripForm: React.FC = () => {
 
   // navigate
   const handleCancel = () => nav("/profile");
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!isFormValid) return;
-    nav("/itinerary/1", { state: { tripData } });
+    setSubmitError("");
+    setSubmitting(true);
+    try {
+      const [sDD, sMM, sYYYY] = tripData.startDate.split("-");
+      const [eDD, eMM, eYYYY] = tripData.endDate.split("-");
+
+      const payload: TripRequest = {
+        destination: tripData.destination,
+        startDate: `${sDD}-${sMM}-${sYYYY}`,
+        endDate: `${eDD}-${eMM}-${eYYYY}`,
+        budget: tripData.budget,
+        peopleCount: tripData.travelers,
+        interests: tripData.interests,
+        travelStyle: tripData.travelStyle,
+      };
+
+      const result = await generateItinerary(payload);
+      nav(`/itinerary/${result.itineraryId}`);
+    } catch (err: any) {
+      const apiMsg =
+          err?.response?.data?.message ||
+          err?.response?.data ||
+          "Couldn't generate your itinerary. Please try again.";
+      setSubmitError(String(apiMsg));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // refs for hidden native date inputs
@@ -642,30 +671,32 @@ const TripForm: React.FC = () => {
           </div>
 
           {/* Buttons */}
+          {submitError && (
+              <p className="mt-2 text-sm text-center sm:text-right" style={{ color: ERROR_RED }}>
+                {submitError}
+              </p>
+          )}
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
             <button
-              className="px-6 py-3 rounded-xl font-semibold shadow-sm"
-              style={{
-                backgroundColor: ACCENT,
-                color: "#1F2937",
-              }}
-              onClick={handleCancel}
-              type="button"
+                className="px-6 py-3 rounded-xl font-semibold shadow-sm"
+                style={{ backgroundColor: ACCENT, color: "#1F2937" }}
+                onClick={handleCancel}
+                type="button"
             >
               Cancel
             </button>
             <button
-              className="px-6 py-3 rounded-xl font-semibold border shadow-sm"
-              style={{
-                backgroundColor: isDark ? CARD_DARK : "#ffffff",
-                borderColor: ACCENT,
-                color: ACCENT,
-              }}
-              disabled={!isFormValid}
-              onClick={handleGenerate}
-              type="button"
+                className="px-6 py-3 rounded-xl font-semibold border shadow-sm disabled:opacity-60"
+                style={{
+                  backgroundColor: isDark ? CARD_DARK : "#ffffff",
+                  borderColor: ACCENT,
+                  color: ACCENT,
+                }}
+                disabled={!isFormValid || submitting}
+                onClick={handleGenerate}
+                type="button"
             >
-              Generate Itinerary
+              {submitting ? "Generating..." : "Generate Itinerary"}
             </button>
           </div>
         </div>
