@@ -12,16 +12,17 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
+import com.AutomatedTravelApp.travel.repository.UserRepository;
+import com.AutomatedTravelApp.travel.security.JwtService;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ActiveProfiles("test")
 @WebMvcTest(ItineraryController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@ActiveProfiles("test")
+@AutoConfigureMockMvc(addFilters = false)   // still good to have
 class ItineraryControllerTest {
 
     @Autowired
@@ -29,6 +30,12 @@ class ItineraryControllerTest {
 
     @MockitoBean
     private ItineraryService itineraryService;
+
+    @MockitoBean
+    private JwtService jwtService;
+
+    @MockitoBean
+    private UserRepository userRepository;
 
     @Test
     void health_ok() throws Exception {
