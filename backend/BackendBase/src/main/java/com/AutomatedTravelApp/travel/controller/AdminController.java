@@ -67,7 +67,7 @@ public class AdminController {
                         .id(u.getId())
                         .name(null) // fill if you add 'name' on User
                         .email(u.getEmail())
-                        .status("ACTIVE") // change if you add a 'status' column
+                        .status(u.isBanned() ? "BANNED" : "ACTIVE")
                         .build())
                 .toList();
     }

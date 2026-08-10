@@ -11,6 +11,7 @@ import com.AutomatedTravelApp.travel.model.User;
 import com.AutomatedTravelApp.travel.model.Role;
 import com.AutomatedTravelApp.travel.repository.UserRepository;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootApplication
 public class TravelApplication {
@@ -21,15 +22,16 @@ public class TravelApplication {
 
     @Bean
     @Profile("!test")
-    CommandLineRunner seedAdmins(UserRepository users) {
+    CommandLineRunner seedAdmins(UserRepository users, PasswordEncoder encoder) {
         return args -> {
+            String defaultPassword = System.getenv().getOrDefault("ADMIN_SEED_PASSWORD", "ChangeMe!123");
             Stream.of("admin1@tajawal.com", "admin2@tajawal.com", "admin3@tajawal.com")
                     .forEach(email -> {
                         if (!users.existsByEmail(email)) {
                             User u = User.builder()
                                     .email(email)
-                                    // TODO: replace with a real hashed password (e.g., BCrypt)
-                                    .passwordHash("str0ngPas$")
+                                    .name("Admin")
+                                    .passwordHash(encoder.encode(defaultPassword))
                                     .role(Role.ADMIN)
                                     .build();
                             users.save(u);
