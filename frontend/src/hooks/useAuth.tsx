@@ -11,6 +11,7 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx | null>(null);
 const KEY = 'tajawal:auth';
+const TOKEN_KEY = 'token';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem(KEY);
+    localStorage.removeItem(TOKEN_KEY);
   };
 
   const makeAdmin = (on: boolean) => {

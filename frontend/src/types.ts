@@ -14,3 +14,16 @@ export type ItineraryDay = {
   day: number;
   activities: Activity[];
 };
+
+export type TravelStyle = 'Luxury' | 'Budget' | 'Comfort';
+
+export type TripRequest = {
+  destination: string;
+  startDate: string;   // dd-mm-yyyy
+  endDate: string;      // dd-mm-yyyy
+  budget: number;
+  travelers?: number;
+  peopleCount?: number;
+  interests: string[];
+  travelStyle: TravelStyle;
+};
